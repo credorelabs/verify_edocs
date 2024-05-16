@@ -1,103 +1,181 @@
+"use client"
+import PageLayout from "@/components/common/PageLayout";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import Swal from "sweetalert2";
+import Lottie from "react-lottie";
+import { DOCSCAN } from "@/assets/animation/indes";
+// import { isValid, verify } from "@govtechsg/oa-verify";
 
 export default function Home() {
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    // Add logic here to handle the dropped files, validate file type, etc.
+    if (!files[0]?.name.endsWith('.tt')) {
+      Swal.fire('Invalid file type!', 'Please upload a MLETR file', 'warning')
+    }
+    console.log(files[0]?.name.endsWith('.pdf'));
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const fileList = Array.from(files);
+      // Add logic here to handle the selected files
+      console.log(fileList);
+    }
+  };
+  // const verifyDocuments = async () => {
+  //   setLoading(true);
+  //   const verify = verificationBuilder(openAttestationVerifiers, {
+  //     network: "sepolia",
+  //   });
+
+  //   const promisesCallback = (verificationMethods) => {
+  //     for (const verificationMethod of verificationMethods) {
+  //       verificationMethod.then((fragment) => {
+  //         console.log(
+  //           `${fragment.name} has been resolved with status ${fragment.status}`
+  //         );
+  //       });
+  //     }
+  //   };
+
+  //   const fragments = await verify(file, promisesCallback);
+  //   // setView(true);
+  //   if (isValid(fragments)) {
+  //     setView(true);
+  //   }
+  //   console.log(isValid(fragments));
+
+  //   setVerificationResult(fragments);
+  //   if (fragments && fragments.some((item) => item.status === "INVALID")) {
+  //     setInvalid(fragments.filter((entry) => entry.status === "INVALID"));
+  //     console.log(fragments.filter((entry) => entry.status === "INVALID"));
+  //   }
+  //   setLoading(false);
+  // };
+
+  // useEffect(() => {
+  //   if (file) {
+  //     verifyDocuments();
+  //   }
+  // }, [file]);
+
+  // const handleFileUpload = async (event) => {
+  //   const file = event.target.files[0];
+  //   // setFile(file);
+  //   setInvalid();
+  //   console.log("file", file);
+  //   let isTransferableAsset;
+
+  //   setSelectedFile(file);
+  //   if (!file) {
+  //     console.error("No file selected");
+  //     return;
+  //   }
+
+  //   try {
+  //     // Create a new FileReader instance
+  //     const reader = new FileReader();
+
+  //     // Define a callback function for when the file is loaded
+  //     reader.onload = async (fileC) => {
+  //       try {
+  //         // Parse the JSON content of the file
+  //         const fileContent = JSON.parse(event.target.result);
+  //         isTransferableAsset = utils.isTransferableAsset(fileContent);
+  //         console.log(oaUtils.isWrappedV2Document(fileContent));
+  //         console.log(oaUtils.isWrappedV3Document(fileContent));
+  //         if (isTransferableAsset) {
+  //           try {
+  //             const tokenId = `0x${oaUtils.getAssetId(fileContent)}`;
+  //             console.log(tokenId);
+  //           } catch (e) {
+  //             console.log(e.message);
+  //           }
+  //         }
+  //         setFile(fileContent);
+  //         console.log(isTransferableAsset);
+  //         console.log(fileContent);
+
+  //         // setVerificationResult(verificationResult);
+  //       } catch (error) {
+  //         console.error("Error parsing JSON:", error);
+  //       }
+  //     };
+
+  //     // Read the file as text
+  //     reader.readAsText(file);
+  //   } catch (error) {
+  //     console.error("Error reading file:", error);
+  //   }
+  // };
+
+  const handleClickInsideDropArea = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: DOCSCAN,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By <Image src="/vercel.svg" alt="Vercel Logo" className="dark:invert" width={100} height={24} priority />
-          </a>
+    <PageLayout>
+      <h1 className="text-3xl font-semibold mb-10">Verify Documents</h1>
+      <div className="flex">
+        <div
+          className={`w-full my-auto h-96 border-2 rounded-lg border-dashed bg-white border-gray-300 flex items-center justify-center ${dragging ? 'bg-gray-100' : ''
+            }`}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={handleClickInsideDropArea}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileInputChange}
+            accept=".tt"
+          />
+          <p className="text-gray-500 text-center"><span className="text-3xl">Drop your .tt files here </span><br />or<br /> <span className="px-8 py-1 text-white cursor-pointer rounded-md bg-[#4fd1c5]">click to browse</span></p>
+        </div>
+        <div className="my-auto">
+          <Lottie options={defaultOptions}
+            isPaused={false}
+            isClickToPauseDisabled={true}
+            height={400}
+            width={400}
+          />
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API .
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </PageLayout>
   );
-}
+};
