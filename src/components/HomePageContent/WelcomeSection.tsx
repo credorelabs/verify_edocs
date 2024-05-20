@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { Carousel } from "./../Carousel";
+// import { Carousel } from "./../Carousel";
 import * as carouselHome from "./../../../cms/carousel/home-carousel.md";
 
 const DescriptionSection: FunctionComponent = () => {
@@ -9,7 +9,7 @@ const DescriptionSection: FunctionComponent = () => {
 
   return (
     <section id="welcome" className="bg-cerulean-50">
-      <Carousel slides={slides} />
+      {/* <Carousel slides={slides} /> */}
     </section>
   );
 };

@@ -144,7 +144,7 @@ module.exports = {
     },
     historyApiFallback: true,
     hot: true,
-    port: 3000,
+    port: 3001,
   },
   stats: {
     colors: true,
