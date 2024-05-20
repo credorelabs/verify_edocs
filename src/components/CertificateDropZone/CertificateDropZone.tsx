@@ -95,7 +95,7 @@ export const CertificateDropZone= () => {
       >
         {(() => {
           switch (true) {
-            case true:
+            case isVerificationPending:
               return <ViewVerificationPending />;
             case isVerificationError:
               return <ViewVerificationError resetData={resetData} />;

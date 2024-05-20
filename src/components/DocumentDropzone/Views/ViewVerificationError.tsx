@@ -12,22 +12,16 @@ interface ViewVerificationErrorProps {
 
 export const ViewVerificationError: FunctionComponent<ViewVerificationErrorProps> = ({ resetData }) => {
   const { verificationStatus, verificationError } = useSelector((state: RootState) => state.certificate);
-
-  useEffect(()=>{
-    Swal.fire({
-      title:"Invalid Document!",
-      icon:"info",
-      iconColor:"red",
-      text:""
-    }).then((res)=>{
-      if(res.isConfirmed){
-        resetData()
-      }else{
-        resetData()
-      }
-    })
-  },[])
   return (
-    <></>
+    <>
+    <DetailedErrors verificationError={verificationError} verificationStatus={verificationStatus}/>
+    <Button 
+      onClick={(e)=>{
+        e.stopPropagation();
+        resetData()
+      }}
+      className="bg-[#f15928] w-auto"
+    >Try another Document</Button>
+    </>
   );
 };

@@ -15,9 +15,6 @@ export const ViewActionError: FunctionComponent<ViewActionErrorProps> = ({ reset
   return (
     <div>
       <div className="flex justify-center items-center my-4">
-        <div className="w-auto mr-2">
-          <img src="/static/images/dropzone/invalid.svg" alt="Document invalid" />
-        </div>
         <div className="w-auto">
           <p className="text-2xl">This document is not valid</p>
         </div>
@@ -26,16 +23,7 @@ export const ViewActionError: FunctionComponent<ViewActionErrorProps> = ({ reset
         title={`Unable to load certificate with the provided parameters`}
         message={retrieveCertificateByActionError}
       />
-      <Link
-        to="/faq"
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        <Button className="text-white bg-scarlet-500 border-scarlet-500 hover:bg-scarlet-400 hover:border-scarlet-400">
-          What Should I do?
-        </Button>
-      </Link>
+      
       <br />
       <div
         data-testid="try-another"
