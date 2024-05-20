@@ -30,7 +30,7 @@ export const getSupportedChainIds = (): ChainId[] => {
   const isLocal = window.location.host.indexOf("localhost") > -1;
   const isTestEnv = process.env.NODE_ENV === "test";
   const networks = IS_DEVELOPMENT ? [...TEST_NETWORKS] : [...MAIN_NETWORKS];
-  if (isTestEnv || isLocal) networks.push(ChainId.Local);
+  // if (isTestEnv || isLocal) networks.push(ChainId.Local);
   return networks;
 };
 

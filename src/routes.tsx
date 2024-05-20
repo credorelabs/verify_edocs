@@ -15,7 +15,7 @@ import { PrivateRoute } from "./components/PrivateRoute";
 // import { LearnPage } from "./pages/learn";
 // import { NewsPage } from "./pages/news";
 // import { NewsPageDetail } from "./pages/newsDetail";
-import { PageNotFound } from "./pages/pageNotFound";
+// import { PageNotFound } from "./pages/pageNotFound";
 // import { PrivacyPolicyPage } from "./pages/privacyPolicy";
 // import { SettingsAddressBookPage, SettingsAddressResolverPage, SettingsPage } from "./pages/settings";
 // import { TermsOfUsePage } from "./pages/termsOfUse";
@@ -72,7 +72,7 @@ const routeComponents: RouteComponents = {
   // termsOfUse: { exact: true, component: TermsOfUsePage },
   // cost: { exact: true, component: CostPage },
   // partners: { exact: true, component: PartnersPage },
-  notFound: { component: PageNotFound },
+  // notFound: { component: PageNotFound },
 };
 
 const pathKeys = Object.keys(paths);
