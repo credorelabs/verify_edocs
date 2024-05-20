@@ -10,23 +10,14 @@ interface DocumentUtilityProps {
   onPrint: () => void;
 }
 
-interface DocumentWithAdditionalMetadata extends v2.OpenAttestationDocument {
-  name?: string;
-  links?: {
-    self?: {
-      href?: string;
-    };
-  };
-}
-
 export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ document, onPrint }) => {
   const [qrCodePopover, setQrCodePopover] = useState(false);
-  const documentWithMetadata = getOpenAttestationData(document) as DocumentWithAdditionalMetadata; // Extending document data to account for undefined metadata in OA schema
-  const { links } = utils.isRawV3Document(documentWithMetadata)
+  const documentWithMetadata = getOpenAttestationData(document) as any; // Extending document data to account for undefined metadata in OA schema
+  const { links }: any = utils.isRawV3Document(documentWithMetadata)
     ? documentWithMetadata.credentialSubject
     : documentWithMetadata;
-    console.log(utils.isRawV3Document(documentWithMetadata))
-    console.log(documentWithMetadata)
+  console.log(utils.isRawV3Document(documentWithMetadata));
+  console.log(documentWithMetadata);
   const fileName = documentWithMetadata?.$template?.name || "Untitled";
   const qrcodeUrl = links?.self?.href;
 
