@@ -2,7 +2,7 @@ import React from "react";
 
 export const Page: React.FunctionComponent<{ title?: string; subtitle?: string }> = ({ title, subtitle, children }) => {
   return (
-    <div className="container py-12">
+    <div className="container py-12 max-w-screen-xl">
       {title && (
         <>
           <h2 className=" max-w-3xl font-bold" data-testid="page-title">

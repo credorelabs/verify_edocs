@@ -84,13 +84,18 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
   };
   return (
     <>
-      <div className="flex flex-wrap justify-between pb-4 -mx-4">
-        <div className="w-full px-4 lg:w-1/3">
-          <AssetInformationPanel
-            tokenRegistryAddress={tokenRegistryAddress}
-            setShowEndorsementChain={setShowEndorsementChain}
-          />
-        </div>
+      <div className="flex justify-between pb-4">
+        {!isSurrendered && !isTokenBurnt && isTitleEscrow && (
+          <>
+            <div className="w-full px-4 lg:w-1/2">
+              <EditableAssetTitle role="Owner" value={beneficiary} isEditable={false} />
+            </div>
+            <div className="w-full pl-4 lg:w-1/2 flex justify-end">
+              <EditableAssetTitle role="Holder" value={holder} isEditable={false} />
+            </div>
+          </>
+        )}
+        
         {isSurrendered && (
           <div className="w-full px-4 lg:w-auto self-end">
             <div className="py-4">
@@ -111,17 +116,14 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
             </div>
           </div>
         )}
-        {!isSurrendered && !isTokenBurnt && isTitleEscrow && (
-          <>
-            <div className="w-full px-4 lg:w-1/3">
-              <EditableAssetTitle role="Owner" value={beneficiary} isEditable={false} />
-            </div>
-            <div className="w-full px-4 lg:w-1/3">
-              <EditableAssetTitle role="Holder" value={holder} isEditable={false} />
-            </div>
-          </>
-        )}
       </div>
+      <div className="flex justify-between pb-4">
+      <div className="flex flex-wrap w-full px-4 lg:w-1/2">
+          <AssetInformationPanel
+            tokenRegistryAddress={tokenRegistryAddress}
+            setShowEndorsementChain={setShowEndorsementChain}
+          />
+        </div>
       {!isTokenBurnt && (
         <div className="flex flex-wrap pb-4">
           <div className="w-auto lg:ml-auto">
@@ -140,7 +142,7 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
                   />
                 ) : (
                   <Button
-                    className="bg-cerulean-500 text-white rounded-xl text-lg py-2 px-3 hover:bg-cerulean-800"
+                    className="bg-[#4fd1c5] text-white rounded-xl text-lg py-2 px-3 hover:bg-cerulean-800"
                     onClick={handleNoAccess}
                   >
                     No Access
@@ -149,7 +151,7 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
               </>
             ) : (
               <Button
-                className="bg-cerulean-500 text-white rounded-xl text-lg py-2 px-3 hover:bg-cerulean-800"
+                className="bg-[#4fd1c5] text-white rounded-xl text-lg py-2 px-3 hover:bg-cerulean-800"
                 data-testid={"connectToWallet"}
                 onClick={handleConnectWallet}
               >
@@ -159,6 +161,7 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
           </div>
         </div>
       )}
+      </div>
     </>
   );
 };

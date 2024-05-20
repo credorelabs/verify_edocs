@@ -1,15 +1,10 @@
-import React, { FunctionComponent } from "react";
+import React from "react";
 import { Button, ButtonSize } from "@tradetrust-tt/tradetrust-ui-components";
-import { SampleMobile } from "../SampleMobile";
-import { useProviderContext } from "../../../common/contexts/provider";
 import { DROPFILE } from "../../Animation";
 import Lottie from 'react-lottie'
-interface ViewProps {
-  toggleQrReaderVisible?: () => void;
-}
 
 export const View = ( ) => {
-  const { currentChainId } = useProviderContext();
+
   const defaultOptions = {
     loop: true,
     autoplay: true,

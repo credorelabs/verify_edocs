@@ -2,9 +2,9 @@ import { v2, utils } from "@tradetrust-tt/tradetrust";
 import { ButtonIcon } from "@tradetrust-tt/tradetrust-ui-components";
 import QRCode, { ImageSettings } from "qrcode.react";
 import React, { FunctionComponent, useState } from "react";
-import { Download, Printer } from "react-feather";
 import { SvgIcon, SvgIconQRCode } from "../UI/SvgIcon";
 import { WrappedOrSignedOpenAttestationDocument, getOpenAttestationData } from "../../utils/shared";
+import { DownloadForOffline, Print } from "@mui/icons-material";
 interface DocumentUtilityProps {
   document: WrappedOrSignedOpenAttestationDocument;
   onPrint: () => void;
@@ -22,10 +22,12 @@ interface DocumentWithAdditionalMetadata extends v2.OpenAttestationDocument {
 export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ document, onPrint }) => {
   const [qrCodePopover, setQrCodePopover] = useState(false);
   const documentWithMetadata = getOpenAttestationData(document) as DocumentWithAdditionalMetadata; // Extending document data to account for undefined metadata in OA schema
-  const { name, links } = utils.isRawV3Document(documentWithMetadata)
+  const { links } = utils.isRawV3Document(documentWithMetadata)
     ? documentWithMetadata.credentialSubject
     : documentWithMetadata;
-  const fileName = name ?? "Untitled";
+    console.log(utils.isRawV3Document(documentWithMetadata))
+    console.log(documentWithMetadata)
+  const fileName = documentWithMetadata?.$template?.name || "Untitled";
   const qrcodeUrl = links?.self?.href;
 
   const imageSettings: ImageSettings = {
@@ -80,7 +82,7 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
             onClick={() => onPrint()}
             style={{ width: "auto", height: "auto" }}
           >
-            <Printer />
+            <Print />
           </ButtonIcon>
         </div>
         <div className="w-auto ml-3">
@@ -95,7 +97,7 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
               className="bg-white text-cerulean-500 border-2 border-cloud-100 rounded-xl hover:bg-cloud-100"
               style={{ width: "auto", height: "auto" }}
             >
-              <Download />
+              <DownloadForOffline />
             </ButtonIcon>
           </a>
         </div>

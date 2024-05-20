@@ -73,8 +73,8 @@ export const DropZoneSectionContainer = (): React.ReactElement => {
   };
 
   return currentChainId ? (
-    <div className="flex mt-4 -mx-4">
-      <div className="w-full md:w-2/3">
+    <div className="flex mt-4">
+      <div className="w-full">
         <div
           id="demoDrop"
           onDrop={(event) => {
@@ -89,14 +89,14 @@ export const DropZoneSectionContainer = (): React.ReactElement => {
           <CertificateDropZoneContainer />
         </div>
       </div>
-      <div className="my-auto mx-auto">
+      {/* <div className="my-auto mx-auto">
           <Lottie options={defaultOptions}
             isPaused={false}
             isClickToPauseDisabled={true}
             height={400}
             width={400}
           />
-        </div>
+        </div> */}
       {/* <DraggableDemoCertificate chainId={currentChainId} /> */}
     </div>
   ) : (

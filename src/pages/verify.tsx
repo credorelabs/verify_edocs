@@ -35,7 +35,7 @@ const VerifyPage = (): React.ReactElement => {
             Choose your network to verify
           </div>
           <NetworkSelect />&nbsp;&nbsp;&nbsp;
-          <Tooltip className="cursor-pointer" title="A document can only be successfully verified on the same network where the document was created in.If unsure, do check with the document issuer."><Info /></Tooltip>
+          <Tooltip className="cursor-pointer" title="A document can only be verified on the network where it was originally created. If you are uncertain, please confirm with the document issuer."><Info /></Tooltip>
         </div>
         <DropZoneSectionContainer />
       </Page>

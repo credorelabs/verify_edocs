@@ -1,10 +1,8 @@
-import React, { FunctionComponent, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@tradetrust-tt/tradetrust-ui-components";
+import React, { FunctionComponent } from "react";
+// import { Button } from "@tradetrust-tt/tradetrust-ui-components";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
 import { DetailedErrors } from "../DetailedErrors";
-import Swal from "sweetalert2";
 
 interface ViewVerificationErrorProps {
   resetData: () => void;
@@ -15,13 +13,16 @@ export const ViewVerificationError: FunctionComponent<ViewVerificationErrorProps
   return (
     <>
     <DetailedErrors verificationError={verificationError} verificationStatus={verificationStatus}/>
-    <Button 
-      onClick={(e)=>{
-        e.stopPropagation();
-        resetData()
-      }}
-      className="bg-[#f15928] w-auto"
-    >Try another Document</Button>
+    <div
+        data-testid="try-another"
+        className="my-8 transition-colors duration-200 underline cursor-pointer text-scarlet-500 hover:text-cloud-500"
+        onClick={(e) => {
+          e.preventDefault();
+          resetData();
+        }}
+      >
+        Try another document
+      </div>
     </>
   );
 };

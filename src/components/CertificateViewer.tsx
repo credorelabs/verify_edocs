@@ -28,15 +28,15 @@ const { trace } = getLogger("component: certificateviewer");
 const getTempProps = (isSample: boolean) => {
   return isSample
     ? {
-        to: "/demo",
-        buttonText: "Try our demo now",
-        title: "Want to try creating a verifiable document? You will be surprised how easy it is.",
-      }
+      to: "/demo",
+      buttonText: "Try our demo now",
+      title: "Want to try creating a verifiable document? You will be surprised how easy it is.",
+    }
     : {
-        to: "/contact",
-        buttonText: "Contact us now",
-        title: "Ready to learn how TradeTrust can benefit your business?",
-      };
+      to: "/contact",
+      buttonText: "Contact us now",
+      title: "Ready to learn how TradeTrust can benefit your business?",
+    };
 };
 
 const renderBanner = (isSample: boolean, isMagic: boolean | undefined) => {
@@ -149,43 +149,47 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
 
   const renderedCertificateViewer = (
     <>
-      <div className="no-print">
-        {!isTransferableDocument && <DocumentStatus isMagicDemo={isMagicDemo} />}
-        {renderBanner(isSampleDocument, isMagicDemo)}
-        <ObfuscatedMessage document={document} />
-        {isTransferableDocument && (
-          <AssetManagementApplication
-            isMagicDemo={isMagicDemo}
-            tokenId={tokenId}
-            tokenRegistryAddress={tokenRegistryAddress}
-            setShowEndorsementChain={setShowEndorsementChain}
-          />
-        )}
-      </div>
-
-      <div className="no-print mt-16">
-        <MultiTabs
-          hasAttachments={hasAttachments}
-          attachments={attachments}
-          templates={templates}
-          setSelectedTemplate={setSelectedTemplate}
-          selectedTemplate={selectedTemplate}
-        />
-      </div>
-      <div className="bg-white py-6">
-        {attachments && (
-          <div className={`${selectedTemplate !== "attachmentTab" ? "hidden" : "block"}`}>
-            <TabPaneAttachments attachments={attachments} />
+      <div className="bg-gray-50">
+        <div className="max-w-screen-xl mx-auto">
+        <div className="no-print">
+          {!isTransferableDocument && <DocumentStatus isMagicDemo={isMagicDemo} />}
+          {renderBanner(isSampleDocument, isMagicDemo)}
+          <ObfuscatedMessage document={document} />
+          {isTransferableDocument && (
+            <AssetManagementApplication
+              isMagicDemo={isMagicDemo}
+              tokenId={tokenId}
+              tokenRegistryAddress={tokenRegistryAddress}
+              setShowEndorsementChain={setShowEndorsementChain}
+            />
+          )}
+        </div>
           </div>
-        )}
-        <div className={`${selectedTemplate === "attachmentTab" ? "hidden" : "block"}`}>
-          {templates.length > 0 && <DocumentUtility document={document} onPrint={onPrint} />}
-          <DecentralisedRendererContainer
-            rawDocument={document}
-            updateTemplates={updateTemplates}
+
+        <div className="no-print mt-16">
+          <MultiTabs
+            hasAttachments={hasAttachments}
+            attachments={attachments}
+            templates={templates}
+            setSelectedTemplate={setSelectedTemplate}
             selectedTemplate={selectedTemplate}
-            ref={childRef}
           />
+        </div>
+        <div className="bg-white py-6">
+          {attachments && (
+            <div className={`${selectedTemplate !== "attachmentTab" ? "hidden" : "block"}`}>
+              <TabPaneAttachments attachments={attachments} />
+            </div>
+          )}
+          <div className={`${selectedTemplate === "attachmentTab" ? "hidden" : "block"}`}>
+            {templates.length > 0 && <DocumentUtility document={document} onPrint={onPrint} />}
+            <DecentralisedRendererContainer
+              rawDocument={document}
+              updateTemplates={updateTemplates}
+              selectedTemplate={selectedTemplate}
+              ref={childRef}
+            />
+          </div>
         </div>
       </div>
     </>

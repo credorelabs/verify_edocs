@@ -148,7 +148,7 @@
     @apply duration-200;
     @apply uppercase;
     @apply cursor-pointer;
-    max-width: 220px;
+    /* max-width: 220px; */
   }
 
   .multi-tab:hover {

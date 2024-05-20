@@ -757,7 +757,7 @@ main a {
   transition-duration: 200ms;
   text-transform: uppercase;
   cursor: pointer;
-  max-width: 220px;
+  /* max-width: 220px; */
 }
 
 .multi-tab:hover {
@@ -2033,6 +2033,11 @@ main a {
   background-color: rgb(79 209 197 / var(--tw-bg-opacity)) !important;
 }
 
+.bg-\[\#4fd1c5\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(79 209 197 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#F15928\] {
   --tw-bg-opacity: 1;
   background-color: rgb(241 89 40 / var(--tw-bg-opacity));
@@ -2549,6 +2554,16 @@ main a {
 
 .leading-tight {
   line-height: 1.25;
+}
+
+.text-\[\#4fd1c5\] {
+  --tw-text-opacity: 1;
+  color: rgb(79 209 197 / var(--tw-text-opacity));
+}
+
+.text-\[\#F15928\] {
+  --tw-text-opacity: 1;
+  color: rgb(241 89 40 / var(--tw-text-opacity));
 }
 
 .text-cerulean-300 {
@@ -3078,10 +3093,6 @@ main a {
     width: 16.666667%;
   }
 
-  .md\:w-2\/3 {
-    width: 66.666667%;
-  }
-
   .md\:w-4\/12 {
     width: 33.333333%;
   }
@@ -3275,6 +3286,10 @@ main a {
 
   .lg\:mr-4 {
     margin-right: 1rem;
+  }
+
+  .lg\:mr-8 {
+    margin-right: 2rem;
   }
 
   .lg\:mt-0 {
