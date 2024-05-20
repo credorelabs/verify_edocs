@@ -1,4 +1,5 @@
 import React, { FunctionComponent } from "react";
+import "../../../loader.css";
 
 export const ViewVerificationPending: FunctionComponent = () => {
   return (
