@@ -5,7 +5,7 @@ export const Page: React.FunctionComponent<{ title?: string; subtitle?: string }
     <div className="container py-12">
       {title && (
         <>
-          <h2 className="text-cloud-800 max-w-3xl" data-testid="page-title">
+          <h2 className=" max-w-3xl font-bold" data-testid="page-title">
             {title}
           </h2>
           {subtitle && (

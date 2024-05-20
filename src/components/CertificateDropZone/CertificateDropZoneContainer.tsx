@@ -23,16 +23,7 @@ export const CertificateDropZoneContainer = (): React.ReactElement => {
     setQrReaderVisible(!qrReaderVisible);
   }, [qrReaderVisible, setQrReaderVisible]);
 
-  return qrReaderVisible ? (
-    <>
-      <QrReader handleQrScanned={handleQrScanned} />
-      <div className="py-2 text-center">
-        <Button className="bg-cerulean-500 text-white hover:bg-cerulean-800" onClick={toggleQrReaderVisible}>
-          {DisableMessage}
-        </Button>
-      </div>
-    </>
-  ) : (
-    <CertificateDropZone toggleQrReaderVisible={toggleQrReaderVisible} />
+  return (
+    <CertificateDropZone  />
   );
 };

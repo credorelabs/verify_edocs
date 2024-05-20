@@ -19,12 +19,8 @@ import { useNetworkSelect } from "./../../common/hooks/useNetworkSelect";
 
 const { TYPES } = CONSTANTS;
 
-interface CertificateDropzoneProps {
-  toggleQrReaderVisible?: () => void;
-}
 
-export const CertificateDropZone: FunctionComponent<CertificateDropzoneProps> = (props) => {
-  const { toggleQrReaderVisible } = props;
+export const CertificateDropZone= () => {
   const dispatch = useDispatch();
   const { verificationPending, retrieveCertificateByActionState, verificationStatus, verificationError } = useSelector(
     (state: RootState) => state.certificate
@@ -95,7 +91,7 @@ export const CertificateDropZone: FunctionComponent<CertificateDropzoneProps> = 
     <div data-testid="certificate-dropzone" {...getRootProps()}>
       <input {...getInputProps()} />
       <div
-        className={`border-2 border-dashed rounded-xl text-center relative p-8 min-h-[400px] flex flex-col justify-center ${customStyle}`}
+        className={`border-2 border-solid rounded-xl text-center relative p-8 min-h-[400px] flex flex-col justify-center ${customStyle}`}
       >
         {(() => {
           switch (true) {
@@ -106,7 +102,7 @@ export const CertificateDropZone: FunctionComponent<CertificateDropzoneProps> = 
             case isActionError:
               return <ViewActionError resetData={resetData} />;
             default:
-              return <View toggleQrReaderVisible={toggleQrReaderVisible} />;
+              return <View/>;
           }
         })()}
       </div>

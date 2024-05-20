@@ -11,7 +11,7 @@ import { PrivateRoute } from "./components/PrivateRoute";
 // import { FaqPage } from "./pages/faq";
 // import { FaqPageDetail } from "./pages/faqDetail";
 // import { Guidelines } from "./pages/guidelines";
-import { HomePage } from "./pages/home";
+// import { HomePage } from "./pages/home";
 // import { LearnPage } from "./pages/learn";
 // import { NewsPage } from "./pages/news";
 // import { NewsPageDetail } from "./pages/newsDetail";

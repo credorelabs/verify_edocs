@@ -7,6 +7,8 @@ import { setActive, reset } from "../../reducers/sample";
 import { loadDemoCertificate, getDemoCert } from "./helpers";
 import { useProviderContext } from "../../common/contexts/provider";
 import { ChainId } from "../../constants/chain-info";
+import { DOCSCAN, FILESCAN } from "../Animation";
+import Lottie from "react-lottie";
 
 interface DraggableDemoCertificateProps {
   chainId: ChainId;
@@ -61,10 +63,18 @@ export const DropZoneSectionContainer = (): React.ReactElement => {
   const dispatch = useDispatch();
   const loadCertificate = React.useCallback((payload: any) => dispatch(updateCertificate(payload)), [dispatch]);
   const { currentChainId } = useProviderContext();
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: FILESCAN,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
 
   return currentChainId ? (
     <div className="flex mt-4 -mx-4">
-      <div className="w-full md:w-1/2">
+      <div className="w-full md:w-2/3">
         <div
           id="demoDrop"
           onDrop={(event) => {
@@ -79,7 +89,15 @@ export const DropZoneSectionContainer = (): React.ReactElement => {
           <CertificateDropZoneContainer />
         </div>
       </div>
-      <DraggableDemoCertificate chainId={currentChainId} />
+      <div className="my-auto mx-auto">
+          <Lottie options={defaultOptions}
+            isPaused={false}
+            isClickToPauseDisabled={true}
+            height={400}
+            width={400}
+          />
+        </div>
+      {/* <DraggableDemoCertificate chainId={currentChainId} /> */}
     </div>
   ) : (
     <div>You are currently on an unsupported network.</div>
