@@ -19,7 +19,7 @@ export const ViewerPage = (props: ViewerPageInterface): React.ReactElement => {
         />
         <meta property="og:title" content="TradeTrust - Viewer" />
         <meta property="og:url" content={`${window.location.origin}/viewer`} />
-        <title>TradeTrust - Viewer</title>
+        <title>Credore - Viewer</title>
         <meta
           name="keywords"
           content="Blockchain, NFT, Ethereum, Electronic Trade Document, Digital Trade Document, Transferable Documents, Electronic Bill of Lading, Bill of Lading, Verifiable Document, Certificate of Origin"
