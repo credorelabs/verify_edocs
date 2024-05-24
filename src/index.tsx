@@ -9,7 +9,7 @@ import { TokenInformationContextProvider } from "./common/contexts/TokenInformat
 import { AuthProvider } from "./common/contexts/AuthenticationContext";
 import "./index.css";
 import { configureStore } from "./store";
-import { Router } from "react-router-dom";
+import { BrowserRouter, Router } from "react-router-dom";
 import { history } from "./history";
 import { NETWORK_NAME } from "./config";
 import { getChainInfoFromNetworkName, getSupportedChainInfo } from "./common/utils/chain-utils";
@@ -31,9 +31,11 @@ const App = () => {
         <TokenInformationContextProvider>
           <AuthProvider>
             <Provider store={store}>
-              <Router history={history}>
-                <AppContainer />
-              </Router>
+              <BrowserRouter basename={window.location.pathname || ''}>
+                <Router history={history}>
+                  <AppContainer />
+                </Router>
+              </BrowserRouter>
             </Provider>
           </AuthProvider>
         </TokenInformationContextProvider>

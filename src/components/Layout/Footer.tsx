@@ -11,7 +11,7 @@ export const Footer: React.FunctionComponent = () => {
           <h1 className="heading">Quick Links</h1>
           <ul className="linksBx">
             <li>
-              <a href="#">Contact Us</a>
+              <a href="https://www.credore.xyz">Contact Us</a>
             </li>
             <li>
               <a href="#">Blog</a>
