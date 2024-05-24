@@ -4,6 +4,7 @@ import { ChainId, ChainInfoObject } from "../../../constants/chain-info";
 import { useProviderContext } from "../../../common/contexts/provider";
 import { getChainInfo } from "../../../common/utils/chain-utils";
 import { useNetworkSelect } from "../../../common/hooks/useNetworkSelect";
+import CheckIcon from '@mui/icons-material/Check';
 
 interface NetworkSelectViewProps {
   onChange: (chainId: ChainId) => void;
@@ -48,7 +49,7 @@ const DropdownItemLabel: FunctionComponent<DropdownItemLabelProps> = ({ classNam
       <div className="flex items-center" data-testid={`network-select-dropdown-label-${network.chainId}`}>
         <img className="mr-2 w-5 h-5 rounded-full" src={network.iconImage} alt={network.label} />
         <span className="w-full">{network.label}</span>
-        {active ? <span className="m-1 p-1 bg-forest-500 rounded-lg justify-self-end" /> : null}
+        {active ? <CheckIcon fontSize="medium" color="success"/> : null}
       </div>
     </div>
   );

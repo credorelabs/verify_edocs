@@ -48,6 +48,20 @@ export enum ChainId {
 }
 
 export const ChainInfo: ChainInfo = {
+  [ChainId.APOTHEM]: {
+    label: "Apothem",
+    chainId: ChainId.APOTHEM,
+    iconImage: "/static/images/networks/xdc.png",
+    networkName: "xdcapothem",
+    networkLabel: "XDC Testnet Apothem",
+    explorerUrl: "https://apothem.xdcscan.io",
+    rpcUrl: "https://rpc.ankr.com/xdc_testnet",
+    nativeCurrency: {
+      name: "XDCt",
+      symbol: "XDCt",
+      decimals: 18,
+    },
+  },
   [ChainId.Local]: {
     label: "Local",
     chainId: ChainId.Local,
@@ -118,20 +132,6 @@ export const ChainInfo: ChainInfo = {
     nativeCurrency: {
       name: "XDC",
       symbol: "XDC",
-      decimals: 18,
-    },
-  },
-  [ChainId.APOTHEM]: {
-    label: "Apothem",
-    chainId: ChainId.APOTHEM,
-    iconImage: "/static/images/networks/xdc.png",
-    networkName: "xdcapothem",
-    networkLabel: "XDC Testnet Apothem",
-    explorerUrl: "https://apothem.xdcscan.io",
-    rpcUrl: "https://rpc.ankr.com/xdc_testnet",
-    nativeCurrency: {
-      name: "XDCt",
-      symbol: "XDCt",
       decimals: 18,
     },
   },
