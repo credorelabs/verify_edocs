@@ -22,7 +22,7 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
   const qrcodeUrl = links?.self?.href;
 
   const imageSettings: ImageSettings = {
-    src: `/static/images/logo-qrcode.png`,
+    src: `/static/images/credore/qrlogo.png`,
     height: 50,
     width: 55,
     excavate: true,

@@ -14,8 +14,8 @@ const localConfig = {
       ...defaultTheme.screens,
     },
     backgroundImage: {
-      "single-wave": "url('/static/images/home/mainBenefits/single-wave.png')",
-      "wave-lines-light": "url('/static/images/common/wave-lines-light.png')",
+      // "single-wave": "url('/static/images/home/mainBenefits/single-wave.png')",
+      // "wave-lines-light": "url('/static/images/common/wave-lines-light.png')",
     },
     fontFamily: {
       sans: ["Gilroy-Medium", "sans-serif"],
