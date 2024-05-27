@@ -1,7 +1,7 @@
 {
   "name": "verify_edocs",
   "version": "0.1.0",
-  "homepage": "https://credorelabs.github.io/verify_edocs/",
+  "homepage": "https://credorelabs.github.io/verify_edocs",
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
