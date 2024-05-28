@@ -17,7 +17,7 @@ export const SampleMobile: FunctionComponent<{ currentChainId: ChainId | undefin
   return currentChainId ? (
     <div className="md:hidden flex flex-col">
       <p className="font-gilroy-bold text-xl mb-4">{topMessage}</p>
-      <button
+      {/* <button
         className="bg-tangerine-500 text-white hover:bg-tangerine-800 rounded-xl font-gilroy-bold py-2 px-3 mx-auto"
         draggable={false}
         onClick={(e: React.SyntheticEvent) => {
@@ -27,7 +27,7 @@ export const SampleMobile: FunctionComponent<{ currentChainId: ChainId | undefin
         }}
       >
         {btnMessage}
-      </button>
+      </button> */}
       <p className="font-gilroy-bold text-xl mt-4">{bottomMessage}</p>
     </div>
   ) : (
