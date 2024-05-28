@@ -73,7 +73,7 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
             onClick={() => onPrint()}
             style={{ width: "auto", height: "auto" }}
           >
-            <Print />
+            <Print className="text-[#4fd1c5]"/>
           </ButtonIcon>
         </div>
         <div className="w-auto ml-3">
@@ -88,7 +88,7 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
               className="bg-white text-cerulean-500 border-2 border-cloud-100 rounded-xl hover:bg-cloud-100"
               style={{ width: "auto", height: "auto" }}
             >
-              <DownloadForOffline />
+              <DownloadForOffline className="text-[#4fd1c5]"/>
             </ButtonIcon>
           </a>
         </div>

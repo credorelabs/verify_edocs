@@ -21,6 +21,8 @@ history.listen(() => {
   gaPageView({ action: "page_view" }, GA_MEASUREMENT_ID);
 });
 
+const basename = "/verify_edocs";
+
 const App = () => {
   return (
     <OverlayContextProvider>
@@ -31,7 +33,7 @@ const App = () => {
         <TokenInformationContextProvider>
           <AuthProvider>
             <Provider store={store}>
-                <Router history={history}>
+                <Router history={history} >
                   <AppContainer />
                 </Router>
             </Provider>

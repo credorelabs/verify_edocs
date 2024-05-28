@@ -124,7 +124,7 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
             setShowEndorsementChain={setShowEndorsementChain}
           />
         </div>
-      {!isTokenBurnt && (
+      {/* {!isTokenBurnt && (
         <div className="flex flex-wrap pb-4">
           <div className="w-auto lg:ml-auto">
             {account ? (
@@ -160,7 +160,7 @@ export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = 
             )}
           </div>
         </div>
-      )}
+      )} */}
       </div>
     </>
   );

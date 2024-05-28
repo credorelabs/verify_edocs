@@ -30,7 +30,7 @@ const VerifyPage = (): React.ReactElement => {
       </Helmet>
 
       <Page title="Verify Your MLETR Documents">
-        <div className="flex items-center">
+        <div className="flex items-center my-auto mt-10">
           <div className="text-gray-900 mr-3 font-semibold" data-testid="page-subtitle">
             Choose your network to verify
           </div>
