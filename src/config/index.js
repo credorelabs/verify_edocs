@@ -28,6 +28,6 @@ module.exports = {
   NETWORK_ID: IS_MAINNET ? "1" : "3",
   IS_TEST_ENV: process.env.NODE_ENV === "test",
   IS_DEV_SERVER: !!process.env.WEBPACK_DEV_SERVER,
-  PUBLIC_URL : process.env.PUBLIC_URL || 'http://localhost:80',
+  PUBLIC_URL : process.env.PUBLIC_URL || 'https://dev-api.credore.xyz',//'http://localhost:80',
   EMAIL_API_KEY : process.env.EMAIL_API_KEY || 'info@credore.xyz'
 };
