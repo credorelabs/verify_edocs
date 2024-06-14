@@ -16,8 +16,6 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
   const { links }: any = utils.isRawV3Document(documentWithMetadata)
     ? documentWithMetadata.credentialSubject
     : documentWithMetadata;
-  console.log(utils.isRawV3Document(documentWithMetadata));
-  console.log(documentWithMetadata);
   const fileName = documentWithMetadata?.$template?.name || "Untitled";
   const qrcodeUrl = links?.self?.href;
 

@@ -62,6 +62,7 @@
     "@tradetrust-tt/tradetrust-utils": "^1.13.4",
     "@tradetrust-tt/tt-verify": "^8.9.1",
     "@types/gtag.js": "0.0.8",
+    "axios": "^0.21.1",
     "buffer": "^6.0.3",
     "cross-env": "^7.0.3",
     "date-fns": "^2.22.1",
@@ -177,7 +178,7 @@
     "typescript": "^4.3.2",
     "vm-browserify": "^1.1.2",
     "wait-on": "^5.3.0",
-    "webpack": "^5.91.0",
+    "webpack": "^5.92.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.4",
     "webpack-env": "^0.8.0"
