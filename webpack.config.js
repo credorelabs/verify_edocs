@@ -5,26 +5,31 @@ const BrotliPlugin = require("brotli-webpack-plugin");
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const Mode = require("frontmatter-markdown-loader/mode");
-const { IS_DEVELOPMENT, IS_TEST_ENV, IS_DEV_SERVER, GA_MEASUREMENT_ID, GA_CONFIG_OPTION } = require("./src/config");
+const {
+  IS_DEVELOPMENT,
+  IS_TEST_ENV,
+  IS_DEV_SERVER,
+  GA_MEASUREMENT_ID,
+  GA_CONFIG_OPTION,
+} = require("./src/config");
 
 module.exports = {
   resolve: {
     alias: {
-      process: "process/browser",
+      process: 'process/browser',
+      axios: path.resolve(__dirname, 'node_modules/axios'),
+      react: path.resolve('./node_modules/react'),
     },
     fallback: {
-      vm: require.resolve("vm-browserify"),
-      stream: require.resolve("stream-browserify"),
-      os: require.resolve("os-browserify/browser"),
-      crypto: require.resolve("crypto-browserify"),
-      path: require.resolve("path-browserify"),
-      buffer: require.resolve("buffer"),
+      vm: require.resolve('vm-browserify'),
+      stream: require.resolve('stream-browserify'),
+      os: require.resolve('os-browserify/browser'),
+      crypto: require.resolve('crypto-browserify'),
+      path: require.resolve('path-browserify'),
+      buffer: require.resolve('buffer'),
     },
-    extensions: [".js", ".ts", ".tsx"],
-    modules: ["node_modules", path.resolve(__dirname, "src")],
-    alias: {
-      react: path.resolve("./node_modules/react"),
-    },
+    extensions: ['.js', '.ts', '.tsx'],
+    modules: ['node_modules', path.resolve(__dirname, 'src')],
   },
   entry: {
     app: ["./src/index.tsx"],
@@ -54,7 +59,10 @@ module.exports = {
       },
       {
         test: /\.(ts|js)x?$/,
-        include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "node_modules/web-did-resolver")],
+        include: [
+          path.resolve(__dirname, "src"),
+          path.resolve(__dirname, "node_modules/web-did-resolver"),
+        ],
         use: {
           loader: "babel-loader",
         },
