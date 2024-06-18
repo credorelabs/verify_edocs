@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { FunctionComponent, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CertificateViewer } from "./CertificateViewer";
 import { Redirect } from "react-router";
@@ -11,9 +11,15 @@ import { getChainId } from "../utils/shared";
 import { useProviderContext } from "../common/contexts/provider";
 import { useNetworkSelect } from "../common/hooks/useNetworkSelect";
 import { EMAIL_API_KEY, PUBLIC_URL } from "../config";
+import { ChainId, ChainInfoObject } from "../constants/chain-info";
 
 interface ViewerPageContainerProps {
   isMagicDemo?: boolean;
+}
+
+interface NetworkSelectViewProps {
+  chainId: ChainId;
+  networks: ChainInfoObject[];
 }
 
 export const ViewerPageContainer = ({
@@ -30,6 +36,7 @@ export const ViewerPageContainer = ({
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const chainId = 51 //getChainId(response.data.document);
 
   useEffect(() => {
     let isMounted = true;
@@ -40,15 +47,15 @@ export const ViewerPageContainer = ({
           const response = await axios.get(`${PUBLIC_URL}/qrcode-storage/${id}/${key}/${EMAIL_API_KEY}`);
           if (isMounted) {
             if (response.data && response.data.document) {
-              const chainId = getChainId(response.data.document);
-            if (chainId && currentChainId !== chainId) {
-              await switchNetwork(chainId);
-            }
-              dispatch(updateCertificate(response.data.document));
+              if (chainId && currentChainId !== chainId) {
+                await switchNetwork(ChainId.APOTHEM);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
             } else {
               throw new Error("Document data is missing in the response");
             }
           }
+          dispatch(updateCertificate(response.data.document));
         } catch (error) {
           console.error("Error retrieving or decrypting document:", error);
           if (isMounted) {
@@ -65,6 +72,7 @@ export const ViewerPageContainer = ({
         }
       }
     };
+    
 
     if (id) {
       retrieveDoc();
