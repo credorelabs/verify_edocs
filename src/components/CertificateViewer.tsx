@@ -23,21 +23,6 @@ import { FORM_SG_URL } from "../routes";
 
 const { trace } = getLogger("component: certificateviewer");
 
-// HOT FIX remove magic demo temporarily until a decision is made to kill it or continue it
-// eslint-disable-next-line
-const getTempProps = (isSample: boolean) => {
-  return isSample
-    ? {
-      to: "/demo",
-      buttonText: "Try our demo now",
-      title: "Want to try creating a verifiable document? You will be surprised how easy it is.",
-    }
-    : {
-      to: "/contact",
-      buttonText: "Contact us now",
-      title: "Ready to learn how TradeTrust can benefit your business?",
-    };
-};
 
 const renderBanner = (isSample: boolean, isMagic: boolean | undefined) => {
   const props = {
@@ -89,7 +74,7 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
 
   const { currentChainId } = useProviderContext();
 
-  /*  Update the certificate when network is changed UNLESS:
+  /*  Update the certificate when network is changed UNLESS
   - it is Magic Demo certificate, as the network does not change for it (fixed at Sepolia).
   - it is Sample certificate, as it is already updated when user changed network from network selector dropdown provided by website UI (not the metamask extension network selector)
    */

@@ -6,5 +6,5 @@ import { RouteInterface } from "../../routes";
 export const PrivateRoute: FunctionComponent<RouteInterface> = (routeProps: RouteInterface) => {
   const { isLoggedIn } = useAuthContext();
 
-  return isLoggedIn ? <Route {...routeProps} /> : <Redirect to="/" />;
+  return isLoggedIn ? <Route {...routeProps} /> : <></>;
 };

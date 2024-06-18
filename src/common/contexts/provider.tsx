@@ -1,12 +1,31 @@
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { ethers, providers } from "ethers";
-import React, { createContext, FunctionComponent, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { INFURA_API_KEY } from "../../config";
+import {
+  INFURA_API_KEY,
+  NETWORK_NAME,
+  PUBLIC_URL,
+  EMAIL_API_KEY,
+} from "../../config";
 import { ProviderDetails, utils } from "@tradetrust-tt/tt-verify";
 import { magic } from "./helpers";
-import { ChainId, ChainInfo, ChainInfoObject } from "../../constants/chain-info";
+import {
+  ChainId,
+  ChainInfo,
+  ChainInfoObject,
+} from "../../constants/chain-info";
 import { UnsupportedNetworkError } from "../errors";
-import { getChainInfo, getChainInfoFromNetworkName, walletSwitchChain } from "../utils/chain-utils";
-import { NETWORK_NAME } from "../../config";
+import {
+  getChainInfo,
+  getChainInfoFromNetworkName,
+  walletSwitchChain,
+} from "../utils/chain-utils";
 
 export enum SIGNER_TYPE {
   IDENTITY = "Identity",
@@ -23,12 +42,16 @@ const createProvider = (chainId: ChainId) => {
         providerType: "infura",
         apiKey: INFURA_API_KEY,
       };
-  return chainId === ChainId.Local ? new providers.JsonRpcProvider(url) : utils.generateProvider(opts);
+  return chainId === ChainId.Local
+    ? new providers.JsonRpcProvider(url)
+    : utils.generateProvider(opts);
 };
 
-// Utility function for use in non-react components that cannot get through hooks
-let currentProvider: providers.Provider | undefined = createProvider(getChainInfoFromNetworkName(NETWORK_NAME).chainId);
-export const getCurrentProvider = (): providers.Provider | undefined => currentProvider;
+let currentProvider: providers.Provider | undefined = createProvider(
+  getChainInfoFromNetworkName(NETWORK_NAME).chainId
+);
+export const getCurrentProvider = (): providers.Provider | undefined =>
+  currentProvider;
 
 interface ProviderContextProps {
   providerType: SIGNER_TYPE;
@@ -45,13 +68,9 @@ interface ProviderContextProps {
 
 export const ProviderContext = createContext<ProviderContextProps>({
   providerType: SIGNER_TYPE.IDENTITY,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   upgradeToMetaMaskSigner: async () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   upgradeToMagicSigner: async () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function,@typescript-eslint/no-unused-vars
   changeNetwork: async (_chainId: ChainId) => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   reloadNetwork: async () => {},
   supportedChainInfoObjects: [],
   currentChainId: undefined,
@@ -79,28 +98,32 @@ interface ProviderContextProviderProps {
   defaultChainId: ChainId;
 }
 
-export const ProviderContextProvider: FunctionComponent<ProviderContextProviderProps> = ({
-  children,
-  networks: supportedChainInfoObjects,
-  defaultChainId,
-}) => {
+export const ProviderContextProvider: React.FC<
+  ProviderContextProviderProps
+> = ({ children, networks: supportedChainInfoObjects, defaultChainId }) => {
   const defaultProvider = useRef(createProvider(defaultChainId));
 
   const isSupportedNetwork = useCallback(
     (chainId: ChainId | number | string) =>
-      supportedChainInfoObjects.some((chainInfoObj) => chainInfoObj.chainId.toString() === chainId.toString()),
+      supportedChainInfoObjects.some(
+        (chainInfoObj) => chainInfoObj.chainId.toString() === chainId.toString()
+      ),
     [supportedChainInfoObjects]
   );
 
-  const [providerType, setProviderType] = useState<SIGNER_TYPE>(SIGNER_TYPE.IDENTITY);
+  const [providerType, setProviderType] = useState<SIGNER_TYPE>(
+    SIGNER_TYPE.IDENTITY
+  );
   const [currentChainId, setCurrentChainId] = useState<ChainId | undefined>(
     isSupportedNetwork(defaultChainId) ? defaultChainId : undefined
   );
   const [account, setAccount] = useState<string | undefined>();
-  const [providerOrSigner, setProviderOrSigner] = useState<providers.Provider | ethers.Signer | undefined>(
+  const [providerOrSigner, setProviderOrSigner] = useState<
+    providers.Provider | ethers.Signer | undefined
+  >(defaultProvider.current);
+  const [provider, setProvider] = useState<providers.Provider | undefined>(
     defaultProvider.current
   );
-  const [provider, setProvider] = useState<providers.Provider | undefined>(defaultProvider.current);
 
   const changeNetwork = async (chainId: ChainId) => {
     await walletSwitchChain(chainId);
@@ -109,16 +132,24 @@ export const ProviderContextProvider: FunctionComponent<ProviderContextProviderP
 
   const updateProvider = useCallback(async () => {
     const { ethereum, web3 } = window;
-    const metamaskExtensionNotFound = typeof ethereum === "undefined" || typeof web3 === "undefined";
+    const metamaskExtensionNotFound =
+      typeof ethereum === "undefined" || typeof web3 === "undefined";
     if (metamaskExtensionNotFound || !ethereum.request) {
       setProvider(createProvider(currentChainId || defaultChainId));
       setAccount(undefined);
     } else {
       const injectedWeb3 = ethereum || (web3 && web3.currentProvider);
-      const newProvider = new ethers.providers.Web3Provider(injectedWeb3, "any");
+      let newProvider: any;
+      try {
+        newProvider = new ethers.providers.Web3Provider(injectedWeb3, "any");
+      } catch (error) {
+        console.log(error);
+      }
       const network = await newProvider.getNetwork();
       if (!isSupportedNetwork(network.chainId)) {
-        console.warn("User wallet is connected to an unsupported network, will fallback to default network");
+        console.warn(
+          "User wallet is connected to an unsupported network, will fallback to default network"
+        );
         setProvider(undefined);
         setAccount(undefined);
         setCurrentChainId(undefined);
@@ -149,14 +180,13 @@ export const ProviderContextProvider: FunctionComponent<ProviderContextProviderP
     const signer = web3Provider.getSigner();
     const address = await signer.getAddress();
     setAccount(address);
-
     setProviderType(SIGNER_TYPE.METAMASK);
   };
 
   const initialiseMagicSigner = async () => {
-    // needs to be cast as any before https://github.com/magiclabs/magic-js/issues/83 has been merged.
-    const magicProvider = new ethers.providers.Web3Provider(magic.rpcProvider as any);
-
+    const magicProvider = new ethers.providers.Web3Provider(
+      magic.rpcProvider as any
+    );
     setProvider(magicProvider);
     setProviderType(SIGNER_TYPE.MAGIC);
   };
@@ -172,7 +202,6 @@ export const ProviderContextProvider: FunctionComponent<ProviderContextProviderP
 
   const reloadNetwork = async () => {
     if (!provider) throw new UnsupportedNetworkError();
-
     const chainId = (await provider.getNetwork()).chainId;
     await changeNetwork(chainId);
   };
@@ -191,16 +220,15 @@ export const ProviderContextProvider: FunctionComponent<ProviderContextProviderP
 
   useEffect(() => {
     if (!window.ethereum) return;
-
     window.ethereum
       .on("accountsChanged", updateProvider)
-      .on("chainChanged", (chainIdHex: string) => changeNetwork(parseInt(chainIdHex, 16)));
-
+      .on("chainChanged", (chainIdHex: string) =>
+        changeNetwork(parseInt(chainIdHex, 16))
+      );
     return () => {
       if (!window.ethereum) return;
       window.ethereum.off("chainChanged").off("accountsChanged");
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -223,4 +251,5 @@ export const ProviderContextProvider: FunctionComponent<ProviderContextProviderP
   );
 };
 
-export const useProviderContext = (): ProviderContextProps => useContext<ProviderContextProps>(ProviderContext);
+export const useProviderContext = (): ProviderContextProps =>
+  useContext<ProviderContextProps>(ProviderContext);
