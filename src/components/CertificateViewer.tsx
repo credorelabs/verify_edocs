@@ -74,7 +74,7 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
 
   const { currentChainId } = useProviderContext();
 
-  /*  Update the certificate when network is changed UNLESS:
+  /*  Update the certificate when network is changed UNLESS
   - it is Magic Demo certificate, as the network does not change for it (fixed at Sepolia).
   - it is Sample certificate, as it is already updated when user changed network from network selector dropdown provided by website UI (not the metamask extension network selector)
    */
