@@ -10,7 +10,7 @@ import { updateCertificate } from "../reducers/certificate";
 import { getChainId } from "../utils/shared";
 import { useProviderContext } from "../common/contexts/provider";
 import { useNetworkSelect } from "../common/hooks/useNetworkSelect";
-import { EMAIL_API_KEY, PUBLIC_URL } from "../config";
+import { EMAIL_API_KEY, IS_DEVELOPMENT, PUBLIC_URL } from "../config";
 import { ChainId, ChainInfoObject } from "../constants/chain-info";
 
 interface ViewerPageContainerProps {
@@ -36,7 +36,7 @@ export const ViewerPageContainer = ({
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const chainId = 51 //getChainId(response.data.document);
+  const chainId = IS_DEVELOPMENT ? ChainId.APOTHEM : ChainId.XDC  //getChainId(response.data.document);
 
   useEffect(() => {
     let isMounted = true;
@@ -48,7 +48,7 @@ export const ViewerPageContainer = ({
           if (isMounted) {
             if (response.data && response.data.document) {
               if (chainId && currentChainId !== chainId) {
-                await switchNetwork(ChainId.APOTHEM);
+                await switchNetwork(chainId);
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
             } else {
