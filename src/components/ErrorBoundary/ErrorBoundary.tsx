@@ -28,11 +28,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Check if the error is a "call revert exception" and ignore it
+    console.log(error)
+    if (error.message.includes('call revert exception')) {
+      return { hasError: false, error: undefined };
+    }
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error): void {
-    stack(error);
+    // Log the error unless it's a "call revert exception"
+    if (!error.message.includes('call revert exception')) {
+      stack(error);
+    }
   }
 
   componentDidMount(): void {
@@ -44,12 +52,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   /**
-   * Global promise unhandled promise rejection to trigger error boundary
+   * Global promise unhandled rejection to trigger error boundary
    */
   onUnhandledRejection = (event: PromiseRejectionEvent): void => {
     event.preventDefault();
-    event.promise.catch(async (error) => {
-      this.setState(ErrorBoundary.getDerivedStateFromError(error));
+    event.promise.catch((error) => {
+      if (!error.message.includes('call revert exception')) {
+        this.setState(ErrorBoundary.getDerivedStateFromError(error));
+      }
     });
   };
 
