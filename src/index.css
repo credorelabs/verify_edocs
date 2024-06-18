@@ -863,6 +863,18 @@ main a {
   bottom: 0px;
 }
 
+.-left-28 {
+  left: -7rem;
+}
+
+.top-1\/4 {
+  top: 25%;
+}
+
+.top-\[-40\%\] {
+  top: -40%;
+}
+
 .z-10 {
   z-index: 10;
 }
@@ -1110,6 +1122,14 @@ main a {
   margin-top: 2rem;
 }
 
+.mr-auto {
+  margin-right: auto;
+}
+
+.box-content {
+  box-sizing: content-box;
+}
+
 .block {
   display: block;
 }
@@ -1140,6 +1160,10 @@ main a {
 
 .aspect-video {
   aspect-ratio: 16 / 9;
+}
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
 }
 
 .h-1 {
@@ -1487,6 +1511,10 @@ main a {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.cursor-grab {
+  cursor: grab;
 }
 
 .list-none {
@@ -2634,6 +2662,10 @@ main a {
   --tw-ring-color: rgb(229 231 235 / var(--tw-ring-opacity));
 }
 
+.active\:cursor-grabbing:active {
+  cursor: grabbing;
+}
+
 .active\:bg-cloud-200:active {
   --tw-bg-opacity: 1;
   background-color: rgb(209 213 217 / var(--tw-bg-opacity));
@@ -2789,6 +2821,10 @@ main a {
 
   .lg\:right-24 {
     right: 6rem;
+  }
+
+  .lg\:-left-24 {
+    left: -6rem;
   }
 
   .lg\:order-1 {
@@ -3044,6 +3080,10 @@ main a {
     position: absolute;
   }
 
+  .xl\:-left-32 {
+    left: -8rem;
+  }
+
   .xl\:mx-16 {
     margin-left: 4rem;
     margin-right: 4rem;
@@ -3059,6 +3099,10 @@ main a {
 
   .xl\:w-1\/4 {
     width: 25%;
+  }
+
+  .xl\:w-64 {
+    width: 16rem;
   }
 
   .xl\:rounded-bl-lg {
