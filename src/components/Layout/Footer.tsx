@@ -5,7 +5,7 @@ import { GitHub } from "@mui/icons-material";
 
 export const Footer: React.FunctionComponent = () => {
   return (
-    <footer className="footer">
+    <footer className="footer static bottom-0">
     <div className="container">
 
       <div className="copyrightSectn">
