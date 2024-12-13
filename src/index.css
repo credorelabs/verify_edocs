@@ -787,6 +787,10 @@ main a {
   inset: 0px;
 }
 
+.bottom-0 {
+  bottom: 0px;
+}
+
 .left-0 {
   left: 0px;
 }
@@ -857,22 +861,6 @@ main a {
 
 .top-\[46\%\] {
   top: 46%;
-}
-
-.bottom-0 {
-  bottom: 0px;
-}
-
-.-left-28 {
-  left: -7rem;
-}
-
-.top-1\/4 {
-  top: 25%;
-}
-
-.top-\[-40\%\] {
-  top: -40%;
 }
 
 .z-10 {
@@ -967,11 +955,6 @@ main a {
 .my-auto {
   margin-top: auto;
   margin-bottom: auto;
-}
-
-.my-12 {
-  margin-top: 3rem;
-  margin-bottom: 3rem;
 }
 
 .-mr-1 {
@@ -1122,14 +1105,6 @@ main a {
   margin-top: 2rem;
 }
 
-.mr-auto {
-  margin-right: auto;
-}
-
-.box-content {
-  box-sizing: content-box;
-}
-
 .block {
   display: block;
 }
@@ -1160,10 +1135,6 @@ main a {
 
 .aspect-video {
   aspect-ratio: 16 / 9;
-}
-
-.aspect-square {
-  aspect-ratio: 1 / 1;
 }
 
 .h-1 {
@@ -1511,10 +1482,6 @@ main a {
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-.cursor-grab {
-  cursor: grab;
 }
 
 .list-none {
@@ -2603,11 +2570,6 @@ main a {
   background-color: rgb(17 94 89 / var(--tw-bg-opacity));
 }
 
-.hover\:bg-white:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
 .hover\:text-cerulean-500:hover {
   --tw-text-opacity: 1;
   color: rgb(45 95 170 / var(--tw-text-opacity));
@@ -2660,10 +2622,6 @@ main a {
 .focus\:ring-gray-200:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(229 231 235 / var(--tw-ring-opacity));
-}
-
-.active\:cursor-grabbing:active {
-  cursor: grabbing;
 }
 
 .active\:bg-cloud-200:active {
@@ -2821,10 +2779,6 @@ main a {
 
   .lg\:right-24 {
     right: 6rem;
-  }
-
-  .lg\:-left-24 {
-    left: -6rem;
   }
 
   .lg\:order-1 {
@@ -3080,10 +3034,6 @@ main a {
     position: absolute;
   }
 
-  .xl\:-left-32 {
-    left: -8rem;
-  }
-
   .xl\:mx-16 {
     margin-left: 4rem;
     margin-right: 4rem;
@@ -3099,10 +3049,6 @@ main a {
 
   .xl\:w-1\/4 {
     width: 25%;
-  }
-
-  .xl\:w-64 {
-    width: 16rem;
   }
 
   .xl\:rounded-bl-lg {

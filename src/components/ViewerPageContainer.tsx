@@ -36,8 +36,7 @@ export const ViewerPageContainer = ({
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const chainId = IS_DEVELOPMENT ? ChainId.APOTHEM : ChainId.XDC  //getChainId(response.data.document);
-
+  const chainId = net!=='hedera' ? (IS_DEVELOPMENT ? ChainId.APOTHEM : ChainId.XDC):(IS_DEVELOPMENT ? ChainId.HederaTestnet : ChainId.HederaMainnet)  //getChainId(response.data.document);
   useEffect(() => {
     let isMounted = true;
 
