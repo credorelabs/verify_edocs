@@ -55,12 +55,14 @@ export default function reducer(state = initialState, action) {
         rawModified: action.payload,
       };
     case types.VERIFYING_CERTIFICATE:
+      console.log("aadasda")
       return {
         ...state,
         verificationPending: true,
         verificationStatus: null,
       };
     case types.VERIFYING_CERTIFICATE_COMPLETED:
+      
       return {
         ...state,
         verificationPending: false,
