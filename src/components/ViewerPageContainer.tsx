@@ -36,7 +36,8 @@ export const ViewerPageContainer = ({
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const chainId = net!=='hedera' ? (IS_DEVELOPMENT ? ChainId.APOTHEM : ChainId.XDC):(IS_DEVELOPMENT ? ChainId.HederaTestnet : ChainId.HederaMainnet)  //getChainId(response.data.document);
+  const chainId = net!=='polygon' ? (IS_DEVELOPMENT ? ChainId.APOTHEM : ChainId.XDC):(IS_DEVELOPMENT ? ChainId.Amoy : ChainId.Polygon)  //getChainId(response.data.document);
+  console.log("chainId--->>", chainId)
   useEffect(() => {
     let isMounted = true;
 
