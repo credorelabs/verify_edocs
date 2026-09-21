@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CertificateViewer } from "./CertificateViewer";
 import { Redirect } from "react-router";
@@ -7,24 +7,12 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { ViewVerificationPending } from "./DocumentDropzone/Views";
 import { updateCertificate } from "../reducers/certificate";
-import { getChainId } from "../utils/shared";
 import { useProviderContext } from "../common/contexts/provider";
 import { useNetworkSelect } from "../common/hooks/useNetworkSelect";
 import { EMAIL_API_KEY, IS_DEVELOPMENT, PUBLIC_URL } from "../config";
-import { ChainId, ChainInfoObject } from "../constants/chain-info";
+import { ChainId } from "../constants/chain-info";
 
-interface ViewerPageContainerProps {
-  isMagicDemo?: boolean;
-}
-
-interface NetworkSelectViewProps {
-  chainId: ChainId;
-  networks: ChainInfoObject[];
-}
-
-export const ViewerPageContainer = ({
-  isMagicDemo,
-}: ViewerPageContainerProps): React.ReactElement => {
+export const ViewerPageContainer = (): React.ReactElement => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { currentChainId } = useProviderContext();
@@ -86,7 +74,8 @@ export const ViewerPageContainer = ({
   }, [id, key]);
 
   const rootState = useSelector((state: RootState) => state);
-  const document = isMagicDemo ? rootState.demoVerify.rawModifiedDocument : rootState.certificate.rawModified;
+  const document = rootState.certificate.rawModified;
+  const filename = rootState.certificate.filename;
 
   if (loading) {
     return <div><ViewVerificationPending/></div>;
@@ -97,7 +86,7 @@ export const ViewerPageContainer = ({
   }
 
   if (document) {
-    return <CertificateViewer isMagicDemo={isMagicDemo} document={document} />;
+    return <CertificateViewer document={document} filename={filename} />;
   }
 
   return <Redirect to="/" />;

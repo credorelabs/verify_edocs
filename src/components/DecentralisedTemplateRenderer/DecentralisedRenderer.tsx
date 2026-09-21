@@ -18,10 +18,13 @@ import {
   print,
 } from "@tradetrust-tt/decentralized-renderer-react-components";
 import { TemplateProps } from "./../../types";
-import { WrappedOrSignedOpenAttestationDocument, getOpenAttestationData, getTemplateUrl } from "../../utils/shared";
+import {
+  WrappedOrSignedOpenAttestationDocument,
+  getOpenAttestationData,
+  getTemplateUrl,
+  getTemplateUrlFromUnsignedDocument,
+} from "../../utils/shared";
 import { Dispatch } from "../../types";
-
-const DEFAULT_RENDERER_URL = `https://generic-templates.tradetrust.io`;
 
 interface DecentralisedRendererProps {
   rawDocument: WrappedOrSignedOpenAttestationDocument;
@@ -29,6 +32,7 @@ interface DecentralisedRendererProps {
   selectedTemplate: string;
   setPrivacyFilter: (doc: any) => void;
   forwardedRef: Ref<{ print: () => void } | undefined>;
+  isFormPreview?: boolean;
 }
 
 const SCROLLBAR_WIDTH = 20; // giving scrollbar a default width as there are no perfect ways to get it
@@ -39,12 +43,15 @@ export const DecentralisedRenderer: FunctionComponent<DecentralisedRendererProps
   selectedTemplate,
   setPrivacyFilter,
   forwardedRef,
+  isFormPreview,
 }) => {
   const toFrame = useRef<Dispatch>();
   const document = useMemo(() => getOpenAttestationData(rawDocument), [rawDocument]);
   const [height, setHeight] = useState(250);
   const [isTimeout, setIsTimeout] = useState(false);
-  const source = getTemplateUrl(rawDocument) ?? DEFAULT_RENDERER_URL;
+  const source = isFormPreview ? getTemplateUrlFromUnsignedDocument(rawDocument) : getTemplateUrl(rawDocument);
+
+  const DEFAULT_SOURCE = process?.env?.DEFAULT_TEMPLATE_URL || undefined;
 
   useImperativeHandle(forwardedRef, () => ({
     print() {
@@ -94,12 +101,13 @@ export const DecentralisedRenderer: FunctionComponent<DecentralisedRendererProps
   }, [selectedTemplate, toFrame]);
 
   return (
-    <div className={`${isTimeout ? "container" : ""}`}>
+    <div className={selectedTemplate == "default-template" || isTimeout ? "container" : ""}>
       <FrameConnector
         style={{ height: `${height}px`, width: "100%", border: "0px" }}
-        source={source}
+        source={DEFAULT_SOURCE ?? source}
         dispatch={dispatch}
         onConnected={onConnected}
+        useFallbackRenderer={true}
       />
     </div>
   );
@@ -117,6 +125,7 @@ const ForwardedRefDecentralisedRenderer = React.forwardRef<
     updateTemplates: (templates: TemplateProps[]) => void;
     setPrivacyFilter: (doc: any) => void;
     selectedTemplate: string;
+    isFormPreview?: boolean;
   }
 >((props, ref) => <DecentralisedRenderer {...props} forwardedRef={ref} />);
 

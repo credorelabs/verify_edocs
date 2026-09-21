@@ -1,41 +1,60 @@
-import { Dropdown, DropdownItem, DropdownProps, IconError } from "@tradetrust-tt/tradetrust-ui-components";
-import React, { FunctionComponent } from "react";
-import { ChainId, ChainInfoObject } from "../../../constants/chain-info";
-import { useProviderContext } from "../../../common/contexts/provider";
-import { getChainInfo } from "../../../common/utils/chain-utils";
+import { isObligationRecord, isTransferableRecord } from "@trustvc/trustvc";
+import React, { FunctionComponent, useEffect, useState } from "react";
+import { Info } from "react-feather";
+import { SIGNER_TYPE, useProviderContext } from "../../../common/contexts/provider";
 import { useNetworkSelect } from "../../../common/hooks/useNetworkSelect";
-import CheckIcon from '@mui/icons-material/Check';
+import { getChainInfo } from "../../../common/utils/chain-utils";
+import { ChainId, ChainInfoObject } from "../../../constants/chain-info";
+import { Dropdown, DropdownItem, DropdownProps } from "../../Dropdown";
+import { LoaderSpinner } from "../../UI/Loader";
+import { IconError } from "../../UI/Icon";
 
 interface NetworkSelectViewProps {
-  onChange: (chainId: ChainId) => void;
-  currentChainId: ChainId | undefined;
-  networks: ChainInfoObject[];
+  onChange: (chainId: ChainId) => Promise<void>;
+  disabled?: boolean;
+  document?: any;
+  networkChangeLoading?: boolean;
 }
 
 interface NetworkSelectDropdownItemProps extends DropdownItemLabelProps {
   onClick?: () => void;
+  networkChangeLoading?: boolean;
 }
 
 interface DropdownItemLabelProps {
   network: ChainInfoObject;
   className?: string;
   active?: boolean;
+  networkChangeLoading?: boolean;
 }
 
 /**
  * Dropdown control for the network selection
  */
-const WrappedDropdown = (props: DropdownProps) => {
-  const { children, className, ...rest } = props;
+const WrappedDropdown = (props: DropdownProps & { networkChangeLoading?: boolean; providerType?: SIGNER_TYPE }) => {
+  const { children, className, disabled, networkChangeLoading, providerType, ...rest } = props;
   return (
-    <div className={className} style={{ minWidth: "12.5em" }}>
+    <div className={className}>
       <Dropdown
-        className="rounded-md py-1 pl-4 p-2 border border-cloud-200 bg-white"
+        className="rounded-md py-2 pl-4 p-2 border border-cloud-200 bg-white"
         data-testid="network-selector"
+        disabled={disabled || networkChangeLoading}
+        menuPortalTarget={document.body}
         {...rest}
       >
         {children}
       </Dropdown>
+      {networkChangeLoading && (
+        <div className="flex flex-row items-center mt-2 gap-2">
+          <Info size={16} color="#6E787F" />
+          <div className="">
+            <span className="text-cloud-500 text-xs">Changing network...</span>
+            {providerType === SIGNER_TYPE.METAMASK && (
+              <span className="text-cloud-500 text-xs ml-1">Please respond to the metamask window</span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -43,13 +62,22 @@ const WrappedDropdown = (props: DropdownProps) => {
 /**
  * Label for the items of the dropdown list
  */
-const DropdownItemLabel: FunctionComponent<DropdownItemLabelProps> = ({ className, active, network }) => {
+const DropdownItemLabel: FunctionComponent<DropdownItemLabelProps> = ({
+  className,
+  active,
+  network,
+  networkChangeLoading,
+}) => {
   return (
     <div className={className}>
       <div className="flex items-center" data-testid={`network-select-dropdown-label-${network.chainId}`}>
-        <img className="mr-2 w-5 h-5 rounded-full" src={network.iconImage} alt={network.label} />
-        <span className="w-full">{network.label}</span>
-        {active ? <CheckIcon fontSize="medium" color="success"/> : null}
+        {networkChangeLoading ? (
+          <LoaderSpinner className="ml mr-2 w-5 h-5" />
+        ) : (
+          <img className="ml mr-2 w-5 h-5 rounded-full" src={network.iconImage} alt={network.label} />
+        )}
+        <span className="w-full text-left">{network.label}</span>
+        {active ? <span className="m-1 p-1 bg-forest-500 rounded-lg justify-self-end" /> : null}
       </div>
     </div>
   );
@@ -59,11 +87,11 @@ const DropdownItemLabel: FunctionComponent<DropdownItemLabelProps> = ({ classNam
  * Item component for the dropdown list
  */
 const NetworkSelectDropdownItem = (props: NetworkSelectDropdownItemProps) => {
-  const { className, network, active, ...rest } = props;
+  const { className, network, active, networkChangeLoading, ...rest } = props;
   return (
     <div className={className}>
       <DropdownItem {...rest}>
-        <DropdownItemLabel network={network} active={active} />
+        <DropdownItemLabel network={network} active={active} networkChangeLoading={networkChangeLoading} />
       </DropdownItem>
     </div>
   );
@@ -72,14 +100,31 @@ const NetworkSelectDropdownItem = (props: NetworkSelectDropdownItemProps) => {
 /**
  * Network Selection dropdown component
  */
-const NetworkSelectView: FunctionComponent<NetworkSelectViewProps> = ({ onChange, networks, currentChainId }) => {
+const NetworkSelectView: FunctionComponent<NetworkSelectViewProps> = ({ onChange, disabled = false, document }) => {
+  const {
+    networkChangeLoading,
+    currentChainId,
+    supportedChainInfoObjects: networks,
+    providerType,
+  } = useProviderContext();
+  const [changingNetwork, setChangingNetwork] = useState<ChainId | undefined>(undefined);
+
+  useEffect(() => {
+    if (!networkChangeLoading) {
+      setChangingNetwork(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [networkChangeLoading]);
+
   const itemsList = networks.map((network, i) => {
     return (
       <NetworkSelectDropdownItem
         key={i}
         network={network}
         active={network.chainId === currentChainId}
+        networkChangeLoading={networkChangeLoading}
         onClick={() => {
+          setChangingNetwork(network.chainId);
           if (onChange) onChange(network.chainId);
         }}
       />
@@ -87,24 +132,38 @@ const NetworkSelectView: FunctionComponent<NetworkSelectViewProps> = ({ onChange
   });
 
   let selectedLabel: React.ReactNode = (
-    <div className="bg-white">
+    <div className={`${disabled || networkChangeLoading ? "bg-gray-200" : "bg-white"} flex justify-start`}>
       <IconError className="mr-2 w-5 h-5 rounded-full" />
       Unsupported Network
     </div>
   );
+
   try {
     if (currentChainId) {
-      selectedLabel = <DropdownItemLabel network={getChainInfo(currentChainId)} />;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      selectedLabel = (
+        <DropdownItemLabel
+          network={getChainInfo(changingNetwork ?? currentChainId)}
+          networkChangeLoading={networkChangeLoading}
+        />
+      );
     }
   } catch (e: any) {
     console.log(e.message);
   }
 
+  const defaultEmptyLabel: React.ReactNode = <div className="w-full flex justify-start">-</div>;
+
+  const transferableRecord = document ? isTransferableRecord(document) || isObligationRecord(document) : false;
+
   return (
     <WrappedDropdown
-      dropdownButtonText={selectedLabel}
-      className="inline-block text-sm"
-      classNameShared="w-full max-w-xs"
+      dropdownButtonText={disabled && !transferableRecord ? defaultEmptyLabel : selectedLabel}
+      className="flex-1 inline-block text-sm"
+      classNameShared="w-full"
+      disabled={disabled}
+      networkChangeLoading={networkChangeLoading}
+      providerType={providerType}
     >
       <div>
         <span className="text-cloud-500 p-3 pr-8 cursor-default">Select a Network</span>
@@ -114,15 +173,24 @@ const NetworkSelectView: FunctionComponent<NetworkSelectViewProps> = ({ onChange
   );
 };
 
-export const NetworkSelect: FunctionComponent = () => {
-  const { supportedChainInfoObjects, currentChainId } = useProviderContext();
-  const { switchNetwork } = useNetworkSelect();
+interface NetworkSelectProps {
+  disabled?: boolean;
+  document?: any;
+  inPlaceLoading?: boolean;
+}
+
+export const NetworkSelect: FunctionComponent<NetworkSelectProps> = ({
+  disabled = false,
+  document,
+  inPlaceLoading = false,
+}) => {
+  const { switchNetwork } = useNetworkSelect({ inPlaceLoading });
 
   const changeHandler = async (chainId: ChainId) => {
-    await switchNetwork(chainId);
+    if (!disabled) {
+      await switchNetwork(chainId);
+    }
   };
 
-  return (
-    <NetworkSelectView currentChainId={currentChainId} onChange={changeHandler} networks={supportedChainInfoObjects} />
-  );
+  return <NetworkSelectView onChange={changeHandler} disabled={disabled} document={document} />;
 };

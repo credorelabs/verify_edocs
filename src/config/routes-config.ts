@@ -1,5 +1,6 @@
 export const paths: Record<string, string> = {
-  verify: "/",
+  verify: "/(|verify)",
   viewer: "/viewer",
-  // notFound: "*",
-}; 
+  endorsementChain: "/endorsement-chain",
+  notFound: "*",
+}; // note that this is being used to generate sitemap

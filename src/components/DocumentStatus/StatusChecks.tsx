@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from "react";
-import { VerificationFragment } from "@tradetrust-tt/tt-verify";
-import { CONSTANTS, interpretFragments } from "@tradetrust-tt/tradetrust-utils";
+import { VerificationFragment } from "@trustvc/trustvc";
+import { errorMessages, interpretFragments } from "@trustvc/trustvc";
+
 import { StatusCheck } from "./StatusCheck";
 
 interface StatusChecksProps {
@@ -8,18 +9,20 @@ interface StatusChecksProps {
 }
 
 export const StatusChecks: FunctionComponent<StatusChecksProps> = ({ verificationStatus }) => {
+  if (!verificationStatus?.length) return null;
+
   const { hashValid, issuedValid, identityValid } = interpretFragments(verificationStatus);
-  const { MESSAGES, TYPES } = CONSTANTS;
+  const { MESSAGES, TYPES } = errorMessages;
 
   return (
-    <div className="flex items-start flex-col mt-2 lg:flex-row xl:mt-0">
-      <div className="w-auto mx-0 lg:mr-8 mb-2 lg:mb-0">
+    <div className="flex items-start flex-col">
+      <div className="w-auto">
         <StatusCheck valid={issuedValid} messageSet={MESSAGES[TYPES.ISSUED]} />
       </div>
-      <div className="w-auto mx-0 lg:mr-8 mb-2 lg:mb-0">
+      <div className="w-auto">
         <StatusCheck valid={identityValid} messageSet={MESSAGES[TYPES.IDENTITY]} />
       </div>
-      <div className="w-auto mx-0 mb-2 lg:mb-0">
+      <div className="w-auto">
         <StatusCheck valid={hashValid} messageSet={MESSAGES[TYPES.HASH]} />
       </div>
     </div>

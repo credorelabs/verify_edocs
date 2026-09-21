@@ -1,14 +1,75 @@
 import React, { FunctionComponent } from "react";
 import { Tag } from "../../UI/Tag";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../reducers";
+import { DOCUMENT_SCHEMA } from "../../../reducers/certificate";
+import { TokenRegistryVersions } from "../../../constants";
+import { useTokenRegistryVersion } from "../../../common/hooks/useTokenRegistryVersion";
 
-export const AssetManagementTags: FunctionComponent = () => {
-  const tagCSS = "text-[#F15928] bg-gray-100 border border-gray-300 rounded-lg font-gilroy-bold font-semibold p-3 mt-3 mr-5 ";
+interface AssetManagementTagsProps {
+  isTransferableDocument?: boolean;
+  /** Obligation record (e.g. BoE) — shows Obligation instead of Transferable. */
+  isObligation?: boolean;
+}
+
+export const AssetManagementTags: FunctionComponent<AssetManagementTagsProps> = ({
+  isTransferableDocument = false,
+  isObligation = false,
+}) => {
+  const { documentSchema } = useSelector((state: RootState) => state.certificate);
+  const tokenRegistryVersion = useTokenRegistryVersion();
+
+  const tagCSSBlue = "bg-cerulean-300/[25%] text-cerulean-500 rounded-full font-gilroy-bold";
+  const tagCSOrange = "bg-tangerine-500/[24%] text-tangerine-500 rounded-full font-gilroy-bold";
+  const tagCSSGrey = "bg-cloud-100 text-cloud-500 rounded-full font-gilroy-bold";
   return (
-    <div className="container">
-      <div className="flex w-full py-2">
-        <Tag className={tagCSS}>Transferable</Tag>
-        <Tag className={tagCSS}>Negotiable</Tag>
-      </div>
+    <div className="flex flex-wrap py-2 gap-2">
+      {isObligation ? (
+        <>
+          <Tag rounded="rounded-full" className={tagCSSBlue}>
+            Obligation
+          </Tag>
+          <Tag rounded="rounded-full" className={tagCSSBlue}>
+            Negotiable
+          </Tag>
+        </>
+      ) : (
+        isTransferableDocument && (
+          <>
+            <Tag rounded="rounded-full" className={tagCSSBlue}>
+              Transferable
+            </Tag>
+            <Tag rounded="rounded-full" className={tagCSSBlue}>
+              Negotiable
+            </Tag>
+          </>
+        )
+      )}
+      {documentSchema === DOCUMENT_SCHEMA.OA_V3 && (
+        <Tag rounded="rounded-full" className={tagCSSGrey}>
+          OA
+        </Tag>
+      )}
+      {documentSchema === DOCUMENT_SCHEMA.W3C_VC_1_1 && (
+        <Tag rounded="rounded-full" className={tagCSOrange}>
+          W3C VC V1.1
+        </Tag>
+      )}
+      {documentSchema === DOCUMENT_SCHEMA.W3C_VC_2_0 && (
+        <Tag rounded="rounded-full" className={tagCSOrange}>
+          W3C VC V2.0
+        </Tag>
+      )}
+      {!isObligation && tokenRegistryVersion === TokenRegistryVersions.V4 && (
+        <Tag rounded="rounded-full" className={tagCSSGrey}>
+          TR V4
+        </Tag>
+      )}
+      {!isObligation && tokenRegistryVersion === TokenRegistryVersions.V5 && (
+        <Tag rounded="rounded-full" className={tagCSOrange}>
+          TR V5
+        </Tag>
+      )}
     </div>
   );
 };

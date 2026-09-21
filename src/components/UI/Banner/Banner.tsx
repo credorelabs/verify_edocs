@@ -1,5 +1,5 @@
 import React, { FunctionComponent, InputHTMLAttributes } from "react";
-import { Button, ButtonSize } from "@tradetrust-tt/tradetrust-ui-components";
+import { Button, ButtonSize } from "../../Button";
 import { NavLink } from "react-router-dom";
 
 interface BannerProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -18,27 +18,25 @@ export const Banner: FunctionComponent<BannerProps> = ({
   absolute = false,
 }: BannerProps) => {
   const button = (
-    <Button className="bg-tangerine-500 text-white hover:bg-tangerine-800 border-none" size={ButtonSize.LG}>
+    <Button className="banner-action" size={ButtonSize.LG}>
       <h4>{buttonText}</h4>
     </Button>
   );
   return (
     <div className={`${className ? className : ""}`}>
-      <div className="container">
-        <div className="rounded-xl bg-cerulean-500 bg-cover bg-wave-lines-light">
-          <div className="flex flex-wrap items-center px-4 py-6 text-white">
-            <div className="px-2 w-full lg:w-2/3 mb-2 lg:mb-0">
-              <h3 data-testid="banner-title">{title}</h3>
-            </div>
-            <div className="px-2 w-auto lg:ml-auto">
-              {absolute ? (
-                <a href={to} target="_blank" rel="noopener noreferrer">
-                  {button}
-                </a>
-              ) : (
-                <NavLink to={to}>{button}</NavLink>
-              )}
-            </div>
+      <div className="credore-banner">
+        <div className="flex flex-wrap items-center gap-4 px-5 py-6 sm:px-7">
+          <div className="px-2 w-full lg:w-2/3 mb-2 lg:mb-0">
+            <h3 data-testid="banner-title">{title}</h3>
+          </div>
+          <div className="px-2 w-auto lg:ml-auto">
+            {absolute ? (
+              <a href={to} target="_blank" rel="noopener noreferrer">
+                {button}
+              </a>
+            ) : (
+              <NavLink to={to}>{button}</NavLink>
+            )}
           </div>
         </div>
       </div>

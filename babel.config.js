@@ -17,12 +17,8 @@ let config = {
     "@babel/plugin-proposal-nullish-coalescing-operator",
     "@babel/plugin-proposal-optional-chaining",
     "macros",
+    "@babel/plugin-transform-class-static-block",
   ],
-  env: {
-    test: {
-      plugins: ["transform-require-context"],
-    },
-  },
 };
 
 module.exports = config;

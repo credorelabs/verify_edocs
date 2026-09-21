@@ -1,21 +1,28 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "esnext",
     "lib": ["dom", "esnext"],
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "jsx": "react",
     "sourceMap": true,
-    "types": ["jest", "node", "webpack-env", "@testing-library/jest-dom", "@types/gtag.js", "cypress"],
+    "types": ["node", "@types/gtag.js", "cypress"],
     "allowJs": true,
     "noEmit": true,
+    "isolatedModules": true,
     "useUnknownInCatchVariables": true
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "Node10"
+    }
   },
   "include": ["src"]
 }

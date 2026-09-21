@@ -2,7 +2,6 @@ import { utils } from "ethers";
 import { compareDesc, compareAsc } from "date-fns";
 import { ChainId } from "../constants/chain-info";
 import { getChainInfo } from "../common/utils/chain-utils";
-import { NewsTag } from "../components/News/types";
 
 export const makeEtherscanAddressURL = (address: string, chainId: ChainId): string => {
   const baseUrl = getChainInfo(chainId).explorerUrl;
@@ -18,15 +17,7 @@ export const isValidEndorseTransfer = (holder?: string, newHolder?: string, newO
 };
 
 export const isEthereumAddress = (address: string): boolean | undefined => {
-  try {
-    if (utils.getAddress(address)) {
-      return true;
-    }
-  } catch (e: any) {
-    if (e.reason === "invalid address") {
-      return false;
-    } else throw e;
-  }
+  return utils.isAddress(address);
 };
 
 export const convertSecondsToMinAndSec = (seconds: number): string => {
@@ -66,30 +57,6 @@ export const addClassNameIfExist = (className?: string): string => {
 };
 
 /**
- * Fetch CMS content according to the context provided and returns an array of cms content.
- * 'context' in this case is some directory that is used as a base for resolving paths to modules.
- *
- * @param context  directory in which the contents are stored
- * @param type     this applies for news content only. It is the type of news article. (other CMS content will be undefined)
- * @returns array of CMS contents
- */
-export const getCmsContentWithSlug = (context: __WebpackModuleApi.RequireContext, type?: NewsTag): any[] => {
-  const cmsContent: any[] = [];
-
-  context.keys().forEach((filename: string) => {
-    const content = context(filename);
-    const slug = filename.replace("./", "").replace(".md", "");
-    cmsContent.push({
-      slug,
-      type,
-      ...content,
-    });
-  });
-
-  return cmsContent;
-};
-
-/**
  * Takes a file path, i.e. "static/img/image.png" , and returns the file name, i.e. "image.png".
  *
  * @param filePath a string that represents the filePath i.e. "static/img/image.png"
@@ -115,4 +82,40 @@ export const isExternalLink = (url: string): boolean => {
   } catch (error) {
     return false;
   }
+};
+
+const getEtherscanBaseUrl = (network: string): string => {
+  return `https://${network === "mainnet" ? "" : network + "."}etherscan.io/`;
+};
+
+const getPolygonscanBaseUrl = (network: string): string => {
+  return `https://${network === "matic" || network === "pol" ? "" : network + "."}polygonscan.com/`;
+};
+
+const isPolygonNetwork = (network: string): boolean => network === "matic" || network === "pol" || network === "amoy";
+
+const getBaseUrl = (network: string): string => {
+  return isPolygonNetwork(network) ? getPolygonscanBaseUrl(network) : getEtherscanBaseUrl(network);
+};
+
+export const makeAddressURL = (address: string, network: string): string => {
+  return `${getBaseUrl(network)}address/${address}`;
+};
+
+interface GenerateFileName {
+  fileName: string;
+  extension: string;
+  hasTimestamp?: boolean;
+}
+
+export const generateFileName = ({ fileName, extension, hasTimestamp }: GenerateFileName): string => {
+  const timestamp = new Date().toISOString();
+  const fileTimestamp = hasTimestamp ? `-${timestamp}` : "";
+  return `${fileName}${fileTimestamp}.${extension}`;
+};
+
+export const getFileSize = (jsonString: string): number => {
+  if (!jsonString || !jsonString?.length) return 0;
+  const m = encodeURIComponent(jsonString).match(/%[89ABab]/g);
+  return jsonString.length + (m ? m.length : 0);
 };

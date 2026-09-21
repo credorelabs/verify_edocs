@@ -1,23 +1,40 @@
 import React, { useCallback, useContext } from "react";
-import { useProviderContext } from "../contexts/provider";
-import { OverlayContext, showDocumentTransferMessage } from "@tradetrust-tt/tradetrust-ui-components";
 import { LoadingModal } from "../../components/UI/Overlay";
+import { showDocumentTransferMessage } from "../../components/UI/Overlay/OverlayContent";
 import { ChainId } from "../../constants/chain-info";
+import { OverlayContext } from "../contexts/OverlayContext";
+import { SIGNER_TYPE, useProviderContext } from "../contexts/provider";
 
 interface useNetworkSelectProps {
+  inPlaceLoading?: boolean;
+}
+
+interface NetworkSelectReturnType {
   switchNetwork: (chainId: ChainId) => void;
 }
 
-export const useNetworkSelect = (): useNetworkSelectProps => {
-  const { changeNetwork } = useProviderContext();
+export const useNetworkSelect = ({ inPlaceLoading = false }: useNetworkSelectProps = {}): NetworkSelectReturnType => {
+  const { providerType, changeNetwork, setNetworkChangeLoading } = useProviderContext();
   const { showOverlay, closeOverlay } = useContext(OverlayContext);
 
   const switchNetwork = useCallback(
     async (chainId: ChainId) => {
       try {
-        showOverlay(<LoadingModal title={"Changing Network..."} content={"Please respond to the metamask window"} />);
+        if (!inPlaceLoading) {
+          if (providerType === SIGNER_TYPE.METAMASK) {
+            showOverlay(
+              <LoadingModal title={"Changing Network..."} content={"Please respond to the metamask window"} />
+            );
+          }
+        } else {
+          setNetworkChangeLoading(true);
+        }
+
         await changeNetwork(chainId);
-        closeOverlay();
+
+        if (!inPlaceLoading) {
+          closeOverlay();
+        }
       } catch (e: any) {
         showOverlay(
           showDocumentTransferMessage("You've cancelled changing network.", {
@@ -26,7 +43,7 @@ export const useNetworkSelect = (): useNetworkSelectProps => {
         );
       }
     },
-    [changeNetwork, closeOverlay, showOverlay]
+    [changeNetwork, closeOverlay, inPlaceLoading, setNetworkChangeLoading, showOverlay, providerType]
   );
 
   return { switchNetwork };

@@ -1,40 +1,141 @@
-import { put, select, takeEvery } from "redux-saga/effects";
-import { getLogger } from "../utils/logger";
+import { decryptString } from "@govtechsg/oa-encryption";
 import {
+  errorMessages,
+  getObligationRegistryAddress,
+  getTokenId,
+  getTokenRegistryAddress,
+  isObligationRecord,
+  isRawV2Document,
+  isRawV3Document,
+  isSignedWrappedV2Document,
+  isSignedWrappedV3Document,
+  isTransferableRecord,
+  isValid,
+  isWrappedV2Document,
+  isWrappedV3Document,
+  vc,
+} from "@trustvc/trustvc";
+import { call, delay, put, race, select, takeEvery } from "redux-saga/effects";
+import { history } from "../history";
+import {
+  detectingTRCertificateVersion,
+  DOCUMENT_SCHEMA,
+  getCertificate,
   types,
   verifyingCertificateCompleted,
   verifyingCertificateFailure,
-  getCertificate,
 } from "../reducers/certificate";
 import { processQrCode } from "../services/qrProcessor";
 import { verifyDocument } from "../services/verify";
-import { isValid } from "@tradetrust-tt/tt-verify";
-import { decryptString } from "@govtechsg/oa-encryption";
-import { history } from "../history";
-import { CONSTANTS } from "@tradetrust-tt/tradetrust-utils";
+import { getLogger } from "../utils/logger";
+import { getKeyId, isTokenRegistryV4 } from "../utils/shared";
 import { ActionPayload } from "./../types";
+import { TokenRegistryVersions } from "../constants";
 
 const { trace } = getLogger("saga:certificate");
 
-const { TYPES } = CONSTANTS;
+const { TYPES } = errorMessages;
 
 export function* verifyCertificate(): any {
+  let certificate;
+  let isTransferableAssetVal;
+  let isObligationAssetVal;
+  let registryAddress;
+  let tokenId;
+
   try {
+    certificate = yield select(getCertificate);
     yield put({
       type: types.VERIFYING_CERTIFICATE,
     });
 
-    const certificate = yield select(getCertificate);
-    const verificationStatus = yield verifyDocument(certificate);
+    isTransferableAssetVal = isTransferableRecord(certificate);
+    isObligationAssetVal = isObligationRecord(certificate);
+    if (isTransferableAssetVal) {
+      registryAddress = getTokenRegistryAddress(certificate);
+      tokenId = getTokenId(certificate);
+    } else if (isObligationAssetVal) {
+      registryAddress = getObligationRegistryAddress(certificate);
+      tokenId = getTokenId(certificate);
+    }
+  } catch (e) {
+    console.error("Certificate verification error: Failed to verify certificate", e);
+    yield put(verifyingCertificateFailure(TYPES.VERIFICATION_ERROR));
+    return;
+  }
+
+  try {
+    if (isObligationAssetVal && registryAddress && tokenId) {
+      // Obligation Registry has no V4/legacy variant — always V5-shaped. Do NOT call
+      // isTokenRegistryV4 here: it probes a TitleEscrow/TokenRegistry ABI that an
+      // ObligationRegistry/ObligationEscrow contract does not implement.
+      yield put(detectingTRCertificateVersion(TokenRegistryVersions.V5));
+    } else if (isTransferableAssetVal && registryAddress && tokenId) {
+      const { tokenRegistryV4, timeout } = yield race({
+        tokenRegistryV4: call(isTokenRegistryV4, registryAddress, tokenId),
+        timeout: delay(2 * 60 * 1000),
+      });
+
+      if (timeout) {
+        yield put(verifyingCertificateFailure(TYPES.SERVER_ERROR));
+        return;
+      }
+
+      yield put(detectingTRCertificateVersion(tokenRegistryV4 ? TokenRegistryVersions.V4 : TokenRegistryVersions.V5));
+    }
+  } catch (e) {
+    console.error("Certificate verification error: server error", e);
+    yield put(verifyingCertificateFailure(TYPES.SERVER_ERROR));
+    return;
+  }
+
+  try {
+    const { verificationStatus, timeout } = yield race({
+      verificationStatus: call(verifyDocument, certificate),
+      timeout: delay(2 * 60 * 1000),
+    });
+
+    if (timeout) {
+      yield put(verifyingCertificateFailure(TYPES.SERVER_ERROR));
+      return;
+    }
+
     trace(`Verification Status: ${JSON.stringify(verificationStatus)}`);
 
-    // Instead of success/failure, report completeness
     yield put(verifyingCertificateCompleted(verificationStatus));
+
+    const isOAV2 =
+      isRawV2Document(certificate) || isSignedWrappedV2Document(certificate) || isWrappedV2Document(certificate);
+    const isOAV3 =
+      isRawV3Document(certificate) || isSignedWrappedV3Document(certificate) || isWrappedV3Document(certificate);
+    const isW3CVC = vc.isSignedDocument(certificate) || vc.isRawDocument(certificate);
+    const isW3CVCVersion2_0 = isW3CVC ? vc.isSignedDocumentV2_0(certificate) : null;
+    const keyId = getKeyId(certificate);
+    yield put({
+      type: types.UPDATE_KEY_ID, // store keyId in saga state
+      payload: keyId,
+    });
+
+    yield put({
+      type: types.UPDATE_DOCUMENT_SCHEMA,
+      payload: isOAV2
+        ? DOCUMENT_SCHEMA.OA_V2
+        : isOAV3
+        ? DOCUMENT_SCHEMA.OA_V3
+        : isW3CVC
+        ? isW3CVCVersion2_0
+          ? DOCUMENT_SCHEMA.W3C_VC_2_0
+          : DOCUMENT_SCHEMA.W3C_VC_1_1
+        : null,
+    });
+
     if (isValid(verificationStatus)) {
       yield history.push("/viewer");
     }
   } catch (e) {
-    yield put(verifyingCertificateFailure(TYPES.CLIENT_NETWORK_ERROR));
+    console.error("Certificate verification error: server error", e);
+    yield put(verifyingCertificateFailure(TYPES.SERVER_ERROR));
+    return;
   }
 }
 
@@ -66,7 +167,7 @@ export function* retrieveCertificateByAction({ payload, anchor }: RetrieveCertif
 
     const { uri, key: payloadKey } = payload;
     const { key: anchorKey } = anchor;
-    const key = anchorKey || payloadKey; // https://github.com/TradeTrust/tradetrust-website/pull/397
+    const key = anchorKey || payloadKey;
 
     // if a key has been provided, let's assume
     let certificate = yield window.fetch(uri).then((response) => {

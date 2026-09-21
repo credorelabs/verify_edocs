@@ -1,43 +1,75 @@
-import { ContractFunctionState, useContractFunctionHook } from "@govtechsg/ethers-contract-hook";
-import { TitleEscrow } from "@tradetrust-tt/token-registry/contracts";
-import React, { createContext, useContext, useEffect, useState, useCallback, FunctionComponent } from "react";
-import { useTitleEscrowContract } from "../../hooks/useTitleEscrowContract";
-import { useProviderContext } from "../provider";
-import { useSupportsInterface } from "../../hooks/useSupportsInterface";
-import { useTokenRegistryContract } from "../../hooks/useTokenRegistryContract";
-import { TradeTrustToken } from "@tradetrust-tt/token-registry/contracts";
-import { useRestoreToken } from "../../hooks/useRestoreToken";
+import React, { createContext, FunctionComponent, useCallback, useContext, useEffect, useState } from "react";
 import { BurnAddress } from "../../../constants/chain-info";
+import { ContractFunctionState, useContractFunctionHook } from "../../hooks/useContractFunctionHook";
+import { useTitleEscrowContract } from "../../hooks/useTitleEscrowContract";
+import { useTokenRegistryContract } from "../../hooks/useTokenRegistryContract";
+import { useProviderContext } from "../provider";
+import { TitleEscrow, TradeTrustToken } from "../../../types";
+import { useTokenRegistryVersion } from "../../hooks/useTokenRegistryVersion";
+import {
+  useGaslessTransferHolder,
+  useGaslessTransferBeneficiary,
+  useGaslessTransferOwners,
+  useGaslessNominate,
+  useGaslessRejectTransferHolder,
+  useGaslessRejectTransferBeneficiary,
+  useGaslessRejectTransferOwners,
+  useGaslessReturnToIssuer,
+  useGaslessAcceptReturned,
+  useGaslessRejectReturned,
+} from "../../../gasless";
 
 interface TokenInformationContext {
   tokenRegistryAddress?: string;
   tokenId?: string;
+  titleEscrowAddress?: string;
   beneficiary?: string;
   holder?: string;
+  prevBeneficiary?: string;
+  prevHolder?: string;
+  remark?: string;
   documentOwner?: string;
   approvedBeneficiary?: string;
   changeHolder: TitleEscrow["transferHolder"];
   changeHolderState: ContractFunctionState;
-  surrender: TitleEscrow["surrender"];
-  surrenderState: ContractFunctionState;
+  returnToIssuer: TitleEscrow["returnToIssuer"];
+  returnToIssuerState: ContractFunctionState;
   endorseBeneficiary: TitleEscrow["transferBeneficiary"];
   endorseBeneficiaryState: ContractFunctionState;
   nominate: TitleEscrow["nominate"];
   nominateState: ContractFunctionState;
   transferOwners: TitleEscrow["transferOwners"];
   transferOwnersState: ContractFunctionState;
-  initialize: (tokenRegistryAddress: string, tokenId: string) => void;
-  isSurrendered: boolean;
+  rejectTransferOwner: TitleEscrow["rejectTransferBeneficiary"];
+  rejectTransferOwnerState: ContractFunctionState;
+  rejectTransferHolder: TitleEscrow["rejectTransferHolder"];
+  rejectTransferHolderState: ContractFunctionState;
+  rejectTransferOwnerHolder: TitleEscrow["rejectTransferOwners"];
+  rejectTransferOwnerHolderError?: Error;
+  rejectTransferOwnerHolderErrorMessage?: string;
+  rejectTransferOwnerHolderState: ContractFunctionState;
+  initialize: (tokenRegistryAddress: string, tokenId: string, isObligation?: boolean) => void;
+  isReturnedToIssuer: boolean;
   isTokenBurnt: boolean;
   isTitleEscrow?: boolean;
   resetStates: () => void;
   destroyToken: TradeTrustToken["burn"];
   destroyTokenState: ContractFunctionState;
-  restoreToken: () => Promise<void>;
+  restoreToken: TradeTrustToken["restore"];
   restoreTokenState: ContractFunctionState;
+  /** Whether the currently loaded document is a BoE / Obligation Record. */
+  isObligation: boolean;
+  /** BoE document status (Issued/Accepted/Rejected/Discharged). Undefined for classic ETR. */
+  obligationStatus?: number;
+  acceptObligation: (...args: any[]) => Promise<any>;
+  acceptObligationState: ContractFunctionState;
+  rejectObligation: (...args: any[]) => Promise<any>;
+  rejectObligationState: ContractFunctionState;
+  dischargeObligation: (...args: any[]) => Promise<any>;
+  dischargeObligationState: ContractFunctionState;
 }
 
-const contractFunctionStub = () => {
+const contractFunctionStub: any = () => {
   return undefined as any;
 };
 
@@ -46,23 +78,37 @@ export const TokenInformationContext = createContext<TokenInformationContext>({
   initialize: () => {},
   changeHolder: contractFunctionStub,
   changeHolderState: "UNINITIALIZED",
-  surrender: contractFunctionStub,
-  surrenderState: "UNINITIALIZED",
+  returnToIssuer: contractFunctionStub,
+  returnToIssuerState: "UNINITIALIZED",
   endorseBeneficiary: contractFunctionStub,
   endorseBeneficiaryState: "UNINITIALIZED",
-  isSurrendered: false,
+  isReturnedToIssuer: false,
   isTokenBurnt: false,
   documentOwner: "",
   nominate: contractFunctionStub,
   nominateState: "UNINITIALIZED",
   transferOwners: contractFunctionStub,
   transferOwnersState: "UNINITIALIZED",
+  rejectTransferOwner: contractFunctionStub,
+  rejectTransferOwnerState: "UNINITIALIZED",
+  rejectTransferOwnerHolderError: undefined,
+  rejectTransferHolder: contractFunctionStub,
+  rejectTransferHolderState: "UNINITIALIZED",
+  rejectTransferOwnerHolder: contractFunctionStub,
+  rejectTransferOwnerHolderState: "UNINITIALIZED",
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   resetStates: () => {},
   destroyToken: contractFunctionStub,
   destroyTokenState: "UNINITIALIZED",
   restoreToken: contractFunctionStub,
   restoreTokenState: "UNINITIALIZED",
+  isObligation: false,
+  acceptObligation: contractFunctionStub,
+  acceptObligationState: "UNINITIALIZED",
+  rejectObligation: contractFunctionStub,
+  rejectObligationState: "UNINITIALIZED",
+  dischargeObligation: contractFunctionStub,
+  dischargeObligationState: "UNINITIALIZED",
 });
 
 interface TokenInformationContextProviderProps {
@@ -74,87 +120,264 @@ export const TokenInformationContextProvider: FunctionComponent<TokenInformation
 }) => {
   const [tokenId, setTokenId] = useState<string>();
   const [tokenRegistryAddress, setTokenRegistryAddress] = useState<string>();
-  const { providerOrSigner } = useProviderContext();
-  const { tokenRegistry } = useTokenRegistryContract(tokenRegistryAddress, providerOrSigner);
-  const { titleEscrow, updateTitleEscrow, documentOwner } = useTitleEscrowContract(
+  const [isObligation, setIsObligation] = useState<boolean>(false);
+  const { providerOrSigner, currentChainId } = useProviderContext();
+  const documentChainId = currentChainId ? String(currentChainId) : undefined;
+  const { tokenRegistry } = useTokenRegistryContract(tokenRegistryAddress, providerOrSigner, isObligation);
+  const { titleEscrow, titleEscrowAddress, updateTitleEscrow, documentOwner } = useTitleEscrowContract(
     providerOrSigner,
     tokenRegistry,
-    tokenId
+    tokenId,
+    isObligation
   );
-  const isSurrendered = documentOwner === tokenRegistryAddress;
-  const isTokenBurnt = documentOwner === BurnAddress; // check if the token belongs to burn address.
+  const isReturnedToIssuer = documentOwner?.toLowerCase() === tokenRegistryAddress?.toLowerCase();
+  const isTokenBurnt = documentOwner?.toLowerCase() === BurnAddress?.toLowerCase(); // check if the token belongs to burn address.
+  const isTitleEscrow = !!useTokenRegistryVersion() || undefined;
 
   // First check whether Contract is TitleEscrow
-  const { isInterfaceType: isTitleEscrow } = useSupportsInterface(titleEscrow, "0x079dff60");
 
   // Contract Read Functions
   const { call: getHolder, value: holder } = useContractFunctionHook(titleEscrow, "holder");
   const { call: getBeneficiary, value: beneficiary } = useContractFunctionHook(titleEscrow, "beneficiary");
   const { call: getApprovedBeneficiary, value: approvedBeneficiary } = useContractFunctionHook(titleEscrow, "nominee");
+  const { call: getPrevBeneficiary, value: prevBeneficiary } = useContractFunctionHook(titleEscrow, "prevBeneficiary");
+  const { call: getPrevHolder, value: prevHolder } = useContractFunctionHook(titleEscrow, "prevHolder");
+  const { call: getRemark, value: remark } = useContractFunctionHook(titleEscrow, "remark");
+  const { call: getObligationStatus, value: obligationStatusRaw } = useContractFunctionHook(
+    titleEscrow as any,
+    "status"
+  );
+  const obligationStatus =
+    obligationStatusRaw !== undefined && obligationStatusRaw !== null ? Number(obligationStatusRaw) : undefined;
+
+  const contractOptions = { titleEscrowAddress, tokenRegistryAddress, tokenId };
+
+  // Classic ETR: gasless-capable hooks. BoE: paid obligation-registry SDK path via useContractFunctionHook.
+  const {
+    send: changeHolderGasless,
+    state: changeHolderGaslessState,
+    reset: resetChangeHolderGasless,
+  } = useGaslessTransferHolder(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: changeHolderPaid,
+    state: changeHolderPaidState,
+    reset: resetChangeHolderPaid,
+  } = useContractFunctionHook(titleEscrow as any, "transferHolder", contractOptions, providerOrSigner, isObligation);
+  const changeHolder = isObligation ? changeHolderPaid : changeHolderGasless;
+  const changeHolderState = isObligation ? changeHolderPaidState : changeHolderGaslessState;
+  const resetChangeHolder = isObligation ? resetChangeHolderPaid : resetChangeHolderGasless;
 
   const {
-    send: destroyToken,
-    state: destroyTokenState,
-    reset: resetDestroyingTokenState,
-  } = useContractFunctionHook(tokenRegistry, "burn");
-
-  const { restoreToken, state: restoreTokenState } = useRestoreToken(providerOrSigner, tokenRegistry, tokenId);
-
-  // Contract Write Functions (available only after provider has been upgraded)
+    send: endorseBeneficiaryGasless,
+    state: endorseBeneficiaryGaslessState,
+    reset: resetEndorseBeneficiaryGasless,
+  } = useGaslessTransferBeneficiary(contractOptions, providerOrSigner, documentChainId);
   const {
-    send: surrender,
-    state: surrenderState,
-    reset: resetSurrender,
-  } = useContractFunctionHook(titleEscrow, "surrender");
-
-  const {
-    send: changeHolder,
-    state: changeHolderState,
-    reset: resetChangeHolder,
-  } = useContractFunctionHook(titleEscrow, "transferHolder");
-
-  const {
-    send: endorseBeneficiary,
-    state: endorseBeneficiaryState,
-    reset: resetEndorseBeneficiary,
-  } = useContractFunctionHook(titleEscrow, "transferBeneficiary");
+    send: endorseBeneficiaryPaid,
+    state: endorseBeneficiaryPaidState,
+    reset: resetEndorseBeneficiaryPaid,
+  } = useContractFunctionHook(
+    titleEscrow as any,
+    "transferBeneficiary",
+    contractOptions,
+    providerOrSigner,
+    isObligation
+  );
+  const endorseBeneficiary = isObligation ? endorseBeneficiaryPaid : endorseBeneficiaryGasless;
+  const endorseBeneficiaryState = isObligation ? endorseBeneficiaryPaidState : endorseBeneficiaryGaslessState;
+  const resetEndorseBeneficiary = isObligation ? resetEndorseBeneficiaryPaid : resetEndorseBeneficiaryGasless;
 
   const {
-    send: nominate,
-    state: nominateState,
-    reset: resetNominate,
-  } = useContractFunctionHook(titleEscrow, "nominate");
+    send: transferOwnersGasless,
+    state: transferOwnersGaslessState,
+    reset: resetTransferOwnersGasless,
+  } = useGaslessTransferOwners(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: transferOwnersPaid,
+    state: transferOwnersPaidState,
+    reset: resetTransferOwnersPaid,
+  } = useContractFunctionHook(titleEscrow as any, "transferOwners", contractOptions, providerOrSigner, isObligation);
+  const transferOwners = isObligation ? transferOwnersPaid : transferOwnersGasless;
+  const transferOwnersState = isObligation ? transferOwnersPaidState : transferOwnersGaslessState;
+  const resetTransferOwners = isObligation ? resetTransferOwnersPaid : resetTransferOwnersGasless;
 
   const {
-    send: transferOwners,
-    state: transferOwnersState,
-    reset: resetTransferOwners,
-  } = useContractFunctionHook(titleEscrow, "transferOwners");
+    send: nominateGasless,
+    state: nominateGaslessState,
+    reset: resetNominateGasless,
+  } = useGaslessNominate(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: nominatePaid,
+    state: nominatePaidState,
+    reset: resetNominatePaid,
+  } = useContractFunctionHook(titleEscrow as any, "nominate", contractOptions, providerOrSigner, isObligation);
+  const nominate = isObligation ? nominatePaid : nominateGasless;
+  const nominateState = isObligation ? nominatePaidState : nominateGaslessState;
+  const resetNominate = isObligation ? resetNominatePaid : resetNominateGasless;
+
+  const {
+    send: rejectTransferHolderGasless,
+    state: rejectTransferHolderGaslessState,
+    reset: resetRejectTransferHolderGasless,
+  } = useGaslessRejectTransferHolder(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: rejectTransferHolderPaid,
+    state: rejectTransferHolderPaidState,
+    reset: resetRejectTransferHolderPaid,
+  } = useContractFunctionHook(
+    titleEscrow as any,
+    "rejectTransferHolder",
+    contractOptions,
+    providerOrSigner,
+    isObligation
+  );
+  const rejectTransferHolder = isObligation ? rejectTransferHolderPaid : rejectTransferHolderGasless;
+  const rejectTransferHolderState = isObligation ? rejectTransferHolderPaidState : rejectTransferHolderGaslessState;
+  const resetRejectTransferHolder = isObligation ? resetRejectTransferHolderPaid : resetRejectTransferHolderGasless;
+
+  const {
+    send: rejectTransferOwnerGasless,
+    state: rejectTransferOwnerGaslessState,
+    reset: resetRejectTransferOwnerGasless,
+  } = useGaslessRejectTransferBeneficiary(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: rejectTransferOwnerPaid,
+    state: rejectTransferOwnerPaidState,
+    reset: resetRejectTransferOwnerPaid,
+  } = useContractFunctionHook(
+    titleEscrow as any,
+    "rejectTransferBeneficiary",
+    contractOptions,
+    providerOrSigner,
+    isObligation
+  );
+  const rejectTransferOwner = isObligation ? rejectTransferOwnerPaid : rejectTransferOwnerGasless;
+  const rejectTransferOwnerState = isObligation ? rejectTransferOwnerPaidState : rejectTransferOwnerGaslessState;
+  const resetRejectTransferOwner = isObligation ? resetRejectTransferOwnerPaid : resetRejectTransferOwnerGasless;
+
+  const {
+    send: rejectTransferOwnerHolderGasless,
+    state: rejectTransferOwnerHolderGaslessState,
+    reset: resetRejectTransferOwnerHolderGasless,
+  } = useGaslessRejectTransferOwners(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: rejectTransferOwnerHolderPaid,
+    state: rejectTransferOwnerHolderPaidState,
+    reset: resetRejectTransferOwnerHolderPaid,
+  } = useContractFunctionHook(
+    titleEscrow as any,
+    "rejectTransferOwners",
+    contractOptions,
+    providerOrSigner,
+    isObligation
+  );
+  const rejectTransferOwnerHolder = isObligation ? rejectTransferOwnerHolderPaid : rejectTransferOwnerHolderGasless;
+  const rejectTransferOwnerHolderState = isObligation
+    ? rejectTransferOwnerHolderPaidState
+    : rejectTransferOwnerHolderGaslessState;
+  const resetRejectTransferOwnerHolder = isObligation
+    ? resetRejectTransferOwnerHolderPaid
+    : resetRejectTransferOwnerHolderGasless;
+
+  const {
+    send: returnToIssuerGasless,
+    state: returnToIssuerGaslessState,
+    reset: resetReturnToIssuerGasless,
+  } = useGaslessReturnToIssuer(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: returnToIssuerPaid,
+    state: returnToIssuerPaidState,
+    reset: resetReturnToIssuerPaid,
+  } = useContractFunctionHook(titleEscrow as any, "returnToIssuer", contractOptions, providerOrSigner, isObligation);
+  const returnToIssuer = isObligation ? returnToIssuerPaid : returnToIssuerGasless;
+  const returnToIssuerState = isObligation ? returnToIssuerPaidState : returnToIssuerGaslessState;
+  const resetReturnToIssuer = isObligation ? resetReturnToIssuerPaid : resetReturnToIssuerGasless;
+
+  const {
+    send: destroyTokenGasless,
+    state: destroyTokenGaslessState,
+    reset: resetDestroyingTokenStateGasless,
+  } = useGaslessAcceptReturned(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: destroyTokenPaid,
+    state: destroyTokenPaidState,
+    reset: resetDestroyingTokenStatePaid,
+  } = useContractFunctionHook(titleEscrow as any, "acceptReturned", contractOptions, providerOrSigner, isObligation);
+  const destroyToken = isObligation ? destroyTokenPaid : destroyTokenGasless;
+  const destroyTokenState = isObligation ? destroyTokenPaidState : destroyTokenGaslessState;
+  const resetDestroyingTokenState = isObligation ? resetDestroyingTokenStatePaid : resetDestroyingTokenStateGasless;
+
+  const {
+    send: restoreTokenGasless,
+    state: restoreTokenGaslessState,
+    reset: resetRestoreTokenStateGasless,
+  } = useGaslessRejectReturned(contractOptions, providerOrSigner, documentChainId);
+  const {
+    send: restoreTokenPaid,
+    state: restoreTokenPaidState,
+    reset: resetRestoreTokenStatePaid,
+  } = useContractFunctionHook(titleEscrow as any, "rejectReturned", contractOptions, providerOrSigner, isObligation);
+  const restoreToken = isObligation ? restoreTokenPaid : restoreTokenGasless;
+  const restoreTokenState = isObligation ? restoreTokenPaidState : restoreTokenGaslessState;
+  const resetRestoreTokenState = isObligation ? resetRestoreTokenStatePaid : resetRestoreTokenStateGasless;
+
+  // BoE obligation lifecycle — paid-only, never gasless.
+  const {
+    send: acceptObligation,
+    state: acceptObligationState,
+    reset: resetAcceptObligation,
+  } = useContractFunctionHook(titleEscrow as any, "accept", contractOptions, providerOrSigner, isObligation);
+  const {
+    send: rejectObligation,
+    state: rejectObligationState,
+    reset: resetRejectObligation,
+  } = useContractFunctionHook(titleEscrow as any, "reject", contractOptions, providerOrSigner, isObligation);
+  const {
+    send: dischargeObligation,
+    state: dischargeObligationState,
+    reset: resetDischargeObligation,
+  } = useContractFunctionHook(titleEscrow as any, "discharge", contractOptions, providerOrSigner, isObligation);
 
   const resetProviders = useCallback(() => {
-    resetSurrender();
-    resetDestroyingTokenState();
     resetChangeHolder();
+    resetDestroyingTokenState();
     resetEndorseBeneficiary();
     resetNominate();
+    resetRejectTransferHolder();
+    resetRejectTransferOwner();
+    resetRejectTransferOwnerHolder();
+    resetRestoreTokenState();
+    resetReturnToIssuer();
     resetTransferOwners();
+    resetAcceptObligation();
+    resetRejectObligation();
+    resetDischargeObligation();
   }, [
-    resetDestroyingTokenState,
-    resetNominate,
     resetChangeHolder,
+    resetDestroyingTokenState,
     resetEndorseBeneficiary,
-    resetSurrender,
+    resetNominate,
+    resetRejectTransferHolder,
+    resetRejectTransferOwner,
+    resetRejectTransferOwnerHolder,
+    resetRestoreTokenState,
+    resetReturnToIssuer,
     resetTransferOwners,
+    resetAcceptObligation,
+    resetRejectObligation,
+    resetDischargeObligation,
   ]);
 
   const resetStates = useCallback(() => {
     setTokenId(undefined);
     setTokenRegistryAddress(undefined);
+    setIsObligation(false);
   }, []);
 
-  const initialize = useCallback((address: string, id: string) => {
+  const initialize = useCallback((address: string, id: string, obligation?: boolean) => {
     setTokenId(id);
     setTokenRegistryAddress(address);
+    setIsObligation(!!obligation);
   }, []);
 
   // Fetch all new information when title escrow is initialized or updated (due to actions)
@@ -164,8 +387,33 @@ export const TokenInformationContextProvider: FunctionComponent<TokenInformation
       getHolder();
       getBeneficiary();
       getApprovedBeneficiary();
+      getPrevBeneficiary();
+      getPrevHolder();
+      getRemark();
+      if (isObligation) getObligationStatus();
     }
-  }, [getApprovedBeneficiary, getBeneficiary, getHolder, isTitleEscrow]);
+  }, [
+    getApprovedBeneficiary,
+    getBeneficiary,
+    getHolder,
+    getPrevBeneficiary,
+    getPrevHolder,
+    getRemark,
+    getObligationStatus,
+    isTitleEscrow,
+    isObligation,
+  ]);
+
+  // Refresh escrow state after BoE lifecycle actions
+  useEffect(() => {
+    if (
+      acceptObligationState === "CONFIRMED" ||
+      rejectObligationState === "CONFIRMED" ||
+      dischargeObligationState === "CONFIRMED"
+    ) {
+      updateTitleEscrow();
+    }
+  }, [acceptObligationState, rejectObligationState, dischargeObligationState, updateTitleEscrow]);
 
   // Update holder whenever holder transfer is successful
   useEffect(() => {
@@ -183,8 +431,8 @@ export const TokenInformationContextProvider: FunctionComponent<TokenInformation
 
   // Update entire title escrow whenever transferTo is successful
   useEffect(() => {
-    if (surrenderState === "CONFIRMED") updateTitleEscrow();
-  }, [surrenderState, updateTitleEscrow]);
+    if (returnToIssuerState === "CONFIRMED") updateTitleEscrow();
+  }, [returnToIssuerState, updateTitleEscrow]);
 
   // Update entire title escrow whenever token is burnt
   useEffect(() => {
@@ -200,6 +448,21 @@ export const TokenInformationContextProvider: FunctionComponent<TokenInformation
     if (transferOwnersState === "CONFIRMED") updateTitleEscrow();
   }, [transferOwnersState, updateTitleEscrow]);
 
+  // Update entire title escrow whenever reject transfer to holder is successful
+  useEffect(() => {
+    if (rejectTransferOwnerState === "CONFIRMED") updateTitleEscrow();
+  }, [rejectTransferOwnerState, updateTitleEscrow]);
+
+  // Update entire title escrow whenever reject transfer holder is successful
+  useEffect(() => {
+    if (rejectTransferHolderState === "CONFIRMED") updateTitleEscrow();
+  }, [rejectTransferHolderState, updateTitleEscrow]);
+
+  // Update entire title escrow whenever reject transfer owners is successful
+  useEffect(() => {
+    if (rejectTransferOwnerHolderState === "CONFIRMED") updateTitleEscrow();
+  }, [rejectTransferOwnerHolderState, updateTitleEscrow]);
+
   // Reset states for all write functions when provider changes to allow methods to be called again without refreshing
   useEffect(resetProviders, [resetProviders, providerOrSigner]);
 
@@ -208,29 +471,47 @@ export const TokenInformationContextProvider: FunctionComponent<TokenInformation
       value={{
         tokenId,
         tokenRegistryAddress,
+        titleEscrowAddress,
         initialize,
         holder: holder?.[0],
         beneficiary: beneficiary?.[0],
         approvedBeneficiary: approvedBeneficiary?.[0],
-        changeHolder,
-        endorseBeneficiary,
-        surrender,
+        prevBeneficiary: prevBeneficiary?.[0],
+        prevHolder: prevHolder?.[0],
+        remark: remark?.[0],
+        changeHolder: changeHolder as any,
+        endorseBeneficiary: endorseBeneficiary as any,
+        returnToIssuer: returnToIssuer as any,
         changeHolderState,
         endorseBeneficiaryState,
-        surrenderState,
+        returnToIssuerState,
         destroyTokenState,
-        destroyToken,
-        isSurrendered,
+        destroyToken: destroyToken as any,
+        isReturnedToIssuer,
         isTokenBurnt,
         isTitleEscrow,
         documentOwner,
-        nominate,
+        nominate: nominate as any,
         nominateState,
-        transferOwners,
+        transferOwners: transferOwners as any,
         transferOwnersState,
+        rejectTransferOwner: rejectTransferOwner as any,
+        rejectTransferOwnerState,
+        rejectTransferHolder: rejectTransferHolder as any,
+        rejectTransferHolderState,
+        rejectTransferOwnerHolder: rejectTransferOwnerHolder as any,
+        rejectTransferOwnerHolderState,
         resetStates,
-        restoreToken,
+        restoreToken: restoreToken as any,
         restoreTokenState,
+        isObligation,
+        obligationStatus: isObligation ? obligationStatus : undefined,
+        acceptObligation: acceptObligation as any,
+        acceptObligationState,
+        rejectObligation: rejectObligation as any,
+        rejectObligationState,
+        dischargeObligation: dischargeObligation as any,
+        dischargeObligationState,
       }}
     >
       {children}
