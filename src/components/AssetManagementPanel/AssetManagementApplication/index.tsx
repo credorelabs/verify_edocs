@@ -43,7 +43,7 @@ const renderBanner = (isSample: boolean) => {
   const props = {
     to: FORM_SG_URL,
     buttonText: "Contact us now",
-    title: "Ready to learn how TradeTrust can benefit your business?",
+    title: "Ready to learn how Credore can benefit your business?",
     absolute: true,
   };
 

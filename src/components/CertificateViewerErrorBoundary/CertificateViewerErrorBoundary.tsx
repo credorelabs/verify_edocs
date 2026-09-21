@@ -17,7 +17,7 @@ export const CERTIFICATE_VIEWER_ERROR_MESSAGES = {
   [CERTIFICATE_VIEWER_ERROR_TYPE.GENERIC]: {
     title: "Generic error",
     heading: "Something Went Wrong",
-    description: "TradeTrust has encountered an issue.",
+    description: "We encountered an internal error and cannot determine the cause, please try again later. If this issue persists, contact us using the feedback link below.",
   },
   [CERTIFICATE_VIEWER_ERROR_TYPE.UNSUPPORTED_NETWORK]: {
     title: "Unsupported network",

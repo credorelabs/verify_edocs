@@ -1,9 +1,9 @@
 export const URLS = {
-  INFO: "https://tradetrust.io",
-  GALLERY: "https://gallery.tradetrust.io",
+  INFO: "https://credore.xyz",
+  GALLERY: "https://credore.xyz",
   GITHUB: "https://github.com/TradeTrust/tradetrust-website",
-  DOCS: "https://docs.tradetrust.io",
-  FAQ: "https://www.tradetrust.io/common-error-faqs/",
+  DOCS: "https://credore.xyz",
+  FAQ: "https://www.credore.xyz",
 };
 
 export enum FaqType {

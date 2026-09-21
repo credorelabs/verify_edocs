@@ -53,7 +53,7 @@ export const HomePageContainer = (): React.ReactElement => {
         const { chainId } = payload;
 
         const anchorStr = decodeURIComponent(hash.substr(1));
-        const anchor = anchorStr ? JSON.parse(anchorStr) : {}; // https://github.com/TradeTrust/tradetrust-website/pull/397
+        const anchor = anchorStr ? JSON.parse(anchorStr) : {};
 
         if (type !== "DOCUMENT") {
           dispatch(retrieveCertificateByActionFailure(`The type ${type} provided from the action is not supported`));
@@ -74,7 +74,7 @@ export const HomePageContainer = (): React.ReactElement => {
   // event listener for any custom postMessage
   window.addEventListener("message", (event) => {
     const allowedOriginRegex =
-      /^https?:\/\/(?:[\w-]+\.)*(?:tradetrust\.io|localhost(?::\d+)?|netlify\.app|netlify\.com|magic\.link)$/;
+      /^https?:\/\/(?:[\w-]+\.)*(?:credore\.xyz|localhost(?::\d+)?|netlify\.app|netlify\.com|magic\.link)$/;
 
     if (!allowedOriginRegex.test(event.origin)) {
       console.error("Invalid origin:", event.origin);

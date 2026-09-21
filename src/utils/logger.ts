@@ -1,6 +1,6 @@
 import debug from "debug";
 
-const creator = debug("tradetrust-website");
+const creator = debug("verify_edocs");
 
 const trace = creator.extend("trace");
 const error = creator.extend("error");

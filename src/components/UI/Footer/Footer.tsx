@@ -4,20 +4,6 @@ import { FooterColumnProps, FooterProps } from "./types";
 
 const sharedColumnPadding = `px-2 lg:px-6 xl:px-8`;
 
-const Logo = (props: Pick<FooterProps, "title" | "logoUrl">): React.ReactElement => {
-  const { title, logoUrl } = props;
-
-  return (
-    <div className="w-full lg:w-auto mb-12 lg:mb-0">
-      {title ? (
-        <p className={"credore-footer-wordmark text-xl lg:text-3xl text-center lg:text-left font-gilroy-bold max-w-[142px]"}>{title}</p>
-      ) : (
-        <img className="max-w-[142px]" src={logoUrl || "/static/images/tradetrust_logo.svg"} alt="TradeTrust Logo" />
-      )}
-    </div>
-  );
-};
-
 const FooterColumn = (props: FooterColumnProps): React.ReactElement => {
   const { category, items } = props;
   return (

@@ -167,7 +167,7 @@ export function* retrieveCertificateByAction({ payload, anchor }: RetrieveCertif
 
     const { uri, key: payloadKey } = payload;
     const { key: anchorKey } = anchor;
-    const key = anchorKey || payloadKey; // https://github.com/TradeTrust/tradetrust-website/pull/397
+    const key = anchorKey || payloadKey;
 
     // if a key has been provided, let's assume
     let certificate = yield window.fetch(uri).then((response) => {

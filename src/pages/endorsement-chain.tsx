@@ -111,9 +111,9 @@ const EndorsementChainPage: React.FC = () => {
           property="og:description"
           content="View the endorsement chain for a TradeTrust token, detailing its history and transfers."
         />
-        <meta property="og:title" content="TradeTrust - Endorsement Chain" />
+        <meta property="og:title" content="Credore - Endorsement Chain" />
         <meta property="og:url" content={`${window.location.origin}/endorsement-chain`} />
-        <title>TradeTrust - Endorsement Chain</title>
+        <title>Credore - Endorsement Chain</title>
         <meta
           name="keywords"
           content={

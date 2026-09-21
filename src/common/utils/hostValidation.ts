@@ -3,7 +3,7 @@
  */
 
 // Define allowed hosts for production and development
-const ALLOWED_HOSTS = ["ref.tradetrust.io", "dev.tradetrust.io", "localhost:3000", "127.0.0.1:3000"];
+const ALLOWED_HOSTS = ["verify.credore.xyz", "dev.verify.credore.xyz", "localhost:3000", "127.0.0.1:3000"];
 
 const getAllowedHosts = (): string[] => [...ALLOWED_HOSTS];
 
