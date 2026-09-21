@@ -1,22 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Outdated Browser Detection -->
+    <script>
+      (function () {
+        function showUnsupportedMessage() {
+          var html = '' +
+            '<style>' +
+            '  body {' +
+            '    background: white;' +
+            '    color: black;' +
+            '    font-family: sans-serif;' +
+            '    display: flex;' +
+            '    align-items: center;' +
+            '    justify-content: center;' +
+            '    height: 100vh;' +
+            '    margin: 0;' +
+            '    text-align: center;' +
+            '  }' +
+            '  .unsupported {' +
+            '    max-width: 600px;' +
+            '    padding: 2rem;' +
+            '  }' +
+            '</style>' +
+            '<div class="unsupported">' +
+            '  <h1>Browser Not Supported</h1>' +
+            '  <p>Please use the latest version of <strong>Google Chrome</strong> for the best experience.</p>' +
+            '</div>';
+          document.body.innerHTML = html;
+        }
+    
+        var isOldBrowser = false;
+    
+        if (
+          typeof Promise === "undefined" ||
+          typeof fetch === "undefined" ||
+          typeof Symbol === "undefined" ||
+          typeof Object.assign === "undefined"
+        ) {
+          isOldBrowser = true;
+        }
+    
+        if (isOldBrowser) {
+          window.onload = showUnsupportedMessage;
+        }
+      })();
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="utf-8" />
+    <meta name="googlebot" content="index,follow" />
     <meta
       name="description"
-      content="Verify your MLETR files at Credore!"
+      content="Credore is a clear, secure workspace for verifiable digital credentials."
     />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/static/images/credore/favicon.jpeg" />
+    <meta property="og:image" content="/static/images/common/share.jpg" />
     <meta property="og:image:alt" content="Credore" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
-    <title>Credore | Verify</title>
-    <link rel="icon" type="image/png" href="/static/images/credore/favicon.jpeg" sizes="32x32" />
-    <link rel="icon" type="image/png" href="/static/images/credore/favicon.jpeg" sizes="16x16" />
+    <title>Credore - credentials, made clear</title>
+    <link rel="icon" type="image/png" href="/static/images/favicon/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/static/images/favicon/favicon-16x16.png" sizes="16x16" />
+    <link href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" rel="stylesheet" />
 
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=<%= htmlWebpackPlugin.options.GA_MEASUREMENT_ID %>"
+    ></script>
+    <script>
+      var option = JSON.parse(`<%= JSON.stringify(htmlWebpackPlugin.options.GA_CONFIG_OPTION) %>`);
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "<%= htmlWebpackPlugin.options.GA_MEASUREMENT_ID %>", option);
+    </script>
   </head>
   <body>
     <div id="root"></div>

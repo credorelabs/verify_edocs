@@ -2,9 +2,9 @@ import React from "react";
 import { FunctionComponent } from "react";
 import { ErrorBoundary, FallbackComponentType } from "../ErrorBoundary";
 import { getCurrentProvider, useProviderContext } from "../../common/contexts/provider";
-import { ErrorPage, ErrorPageProps } from "@tradetrust-tt/tradetrust-ui-components";
 import { Link } from "react-router-dom";
 import { UnsupportedNetworkError } from "../../common/errors";
+import { ErrorPage, ErrorPageProps } from "../ErrorPage";
 
 export enum CERTIFICATE_VIEWER_ERROR_TYPE {
   GENERIC,
@@ -17,7 +17,7 @@ export const CERTIFICATE_VIEWER_ERROR_MESSAGES = {
   [CERTIFICATE_VIEWER_ERROR_TYPE.GENERIC]: {
     title: "Generic error",
     heading: "Something Went Wrong",
-    description: "Credore has encountered an issue.",
+    description: "TradeTrust has encountered an issue.",
   },
   [CERTIFICATE_VIEWER_ERROR_TYPE.UNSUPPORTED_NETWORK]: {
     title: "Unsupported network",
@@ -144,7 +144,6 @@ export const getErrorPageProps = ({ errorType }: { errorType: CERTIFICATE_VIEWER
  */
 const ErrorComponent: FallbackComponentType = (props) => {
   const { error, recover } = props;
-
   const errorType = getErrorType(error);
   const errorPageProps = getErrorPageProps({ errorType });
   const retryLink = getRetryLink({ errorType, recover });

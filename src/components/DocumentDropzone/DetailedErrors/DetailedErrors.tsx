@@ -1,12 +1,15 @@
 import React, { FunctionComponent } from "react";
-import { VerificationFragment } from "@tradetrust-tt/tt-verify";
-import { CONSTANTS, errorMessageHandling } from "@tradetrust-tt/tradetrust-utils";
+import { VerificationFragment } from "@trustvc/trustvc";
+import { errorMessages, errorMessageHandling } from "@trustvc/trustvc";
 
 export const DetailedError: FunctionComponent<{ title: string; message: string }> = ({ title, message }) => {
   return (
-    <div className="my-2 sm:mx-8 xl:mx-16">
-      <h4 className="text-scarlet-500 mb-0">{title}</h4>
-      <p className="text-cloud-800 break-words">{message}</p>
+    <div className="credential-error-item">
+      <div className="flex items-center justify-center gap-2">
+        <img src="/static/images/dropzone/invalid.svg" alt="Document invalid" className="w-6 h-6" />
+        <h4 className="text-scarlet-500 mb-0">{title}</h4>
+      </div>
+      <p className="text-cloud-800 break-words text-left">{message}</p>
     </div>
   );
 };
@@ -15,13 +18,24 @@ export const DetailedErrors: FunctionComponent<{
   verificationStatus: VerificationFragment[] | null;
   verificationError: string | null;
 }> = ({ verificationStatus, verificationError }) => {
-  if (!verificationStatus) return null;
-  const { MESSAGES } = CONSTANTS;
-  const errors = errorMessageHandling(verificationStatus);
-  if (verificationError) errors.push(verificationError);
+  const { MESSAGES } = errorMessages;
+  const errors: string[] = [...(verificationStatus ? errorMessageHandling(verificationStatus) : [])];
+  if (verificationError) {
+    if (Array.isArray(verificationError)) {
+      verificationError.forEach((error) => {
+        if (MESSAGES[error] && !errors.includes(error)) {
+          errors.push(error);
+        }
+      });
+    } else {
+      if (MESSAGES[verificationError] && !errors.includes(verificationError)) {
+        errors.push(verificationError);
+      }
+    }
+  }
 
   return (
-    <div className="mb-8">
+    <div className="credential-error-list">
       {errors.map((errorType, index) => (
         <DetailedError
           key={index}

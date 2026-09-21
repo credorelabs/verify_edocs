@@ -1,10 +1,12 @@
-import { BackArrow } from "@tradetrust-tt/tradetrust-ui-components";
 import { useIdentifierResolver } from "@govtechsg/address-identity-resolver";
 import { format } from "date-fns";
 import React, { FunctionComponent } from "react";
-import { EndorsementChain } from "../../../types";
 import { EndorsementChainError } from "./EndorsementChainError";
 import { EndorsementChainLoading } from "./EndorsementChainLoading";
+import { EndorsementChain } from "@trustvc/trustvc";
+import { BackArrow } from "../../UI/Nav";
+import { useTokenRegistryVersion } from "../../../common/hooks/useTokenRegistryVersion";
+import { TokenRegistryVersions } from "../../../constants";
 
 interface EndorsementChainLayout {
   endorsementChain?: EndorsementChain;
@@ -12,17 +14,25 @@ interface EndorsementChainLayout {
   pending: boolean;
   setShowEndorsementChain: (payload: boolean) => void;
   providerDocumentationURL: string;
+  /** When true, shred rows keep last owner/holder (eBoE). Classic ETR leaves them blank. */
+  isObligation?: boolean;
 }
 
 enum ActionType {
   INITIAL = "Document has been issued",
-  NEW_OWNERS = "Change Owners",
-  ENDORSE = "Endorse change of ownership",
+  NEW_OWNERS = "Transfer ownership and holdership",
+  ENDORSE = "Transfer ownership",
   TRANSFER = "Transfer holdership",
-  SURRENDERED = "Document surrendered to issuer",
-  SURRENDER_REJECTED = "Surrender of document rejected",
-  SURRENDER_ACCEPTED = "Surrender of document accepted", // burnt token
+  REJECT_TRANSFER_HOLDER = "Rejection of holdership",
+  REJECT_TRANSFER_BENEFICIARY = "Rejection of ownership",
+  RETURNED_TO_ISSUER = "ETR returned to issuer",
+  RETURN_TO_ISSUER_REJECTED = "Return of ETR rejected",
+  RETURN_TO_ISSUER_ACCEPTED = "ETR taken out of circulation", // burnt token
   TRANSFER_TO_WALLET = "Transferred to wallet",
+  STATUS_INITIALIZED = "Bill issued",
+  STATUS_ACCEPTED = "Bill accepted",
+  STATUS_REJECTED = "Bill rejected",
+  STATUS_DISCHARGED = "Bill discharged",
 }
 
 interface HistoryChain {
@@ -33,6 +43,7 @@ interface HistoryChain {
   holder?: string;
   timestamp?: number;
   hash?: string;
+  remark?: string;
 }
 
 interface AddressResolvedNameProps {
@@ -41,92 +52,242 @@ interface AddressResolvedNameProps {
 
 const AddressResolvedName: React.FunctionComponent<AddressResolvedNameProps> = ({ address }) => {
   const { identityName } = useIdentifierResolver(address);
-  return <>{identityName && <div className="mr-2">{identityName}</div>}</>;
+  return <h6 className="text-cloud-800 break-words">{identityName}</h6>;
 };
 
-interface DetailsEntityProps {
+interface AddressBlockProps {
   title: string;
   address: string;
 }
 
-const getHistoryChain = (endorsementChain?: EndorsementChain) => {
+interface RemarkBlockProps {
+  remark?: string;
+}
+
+interface DetailsEntityProps extends Partial<AddressBlockProps>, Partial<RemarkBlockProps> {
+  title: string;
+}
+
+const getHistoryChain = (endorsementChain?: EndorsementChain, isObligation = false) => {
   const historyChain: HistoryChain[] = [];
+  // Carry forward last known owner/holder so transfer/status rows match classic ETR
+  // (SDK events often only set the party that changed).
+  let lastOwner = "";
+  let lastHolder = "";
 
   endorsementChain?.forEach((endorsementChainEvent) => {
-    const beneficiary = endorsementChainEvent.owner;
-    const holder = endorsementChainEvent.holder;
+    const isShred =
+      endorsementChainEvent.type === "RETURN_TO_ISSUER_ACCEPTED" || endorsementChainEvent.type === "SURRENDER_ACCEPTED";
+
+    const pick = (value?: string, fallback = "") => {
+      if (!value || /^0x0{40}$/i.test(value)) return fallback || undefined;
+      return value;
+    };
+
+    // eBoE shred: keep last owner/holder. Classic ETR shred: leave blank.
+    const beneficiary = isShred && !isObligation ? undefined : pick(endorsementChainEvent.owner, lastOwner);
+    const holder = isShred && !isObligation ? undefined : pick(endorsementChainEvent.holder, lastHolder);
+
+    if (isShred && !isObligation) {
+      lastOwner = "";
+      lastHolder = "";
+    } else {
+      if (beneficiary) lastOwner = beneficiary;
+      if (holder) lastHolder = holder;
+      if (isShred) {
+        lastOwner = "";
+        lastHolder = "";
+      }
+    }
+
     const timestamp = endorsementChainEvent.timestamp;
     const hash = endorsementChainEvent.transactionHash;
+    const remark = endorsementChainEvent?.remark;
+    const showOwner = Boolean(beneficiary);
+    const showHolder = Boolean(holder);
+
     switch (endorsementChainEvent.type) {
       case "TRANSFER_OWNERS":
         historyChain.push({
           action: ActionType.NEW_OWNERS,
-          isNewBeneficiary: true,
-          isNewHolder: true,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
           beneficiary,
           holder,
           timestamp,
           hash,
+          remark,
         });
         break;
       case "TRANSFER_BENEFICIARY":
         historyChain.push({
           action: ActionType.ENDORSE,
-          isNewBeneficiary: true,
-          isNewHolder: false,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
           beneficiary,
           holder,
           timestamp,
           hash,
+          remark,
         });
         break;
       case "TRANSFER_HOLDER":
         historyChain.push({
           action: ActionType.TRANSFER,
-          isNewBeneficiary: false,
-          isNewHolder: true,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
           beneficiary,
           holder,
           timestamp,
           hash,
+          remark,
         });
         break;
+      case "RETURNED_TO_ISSUER":
       case "SURRENDERED":
         historyChain.push({
-          action: ActionType.SURRENDERED,
-          isNewBeneficiary: true,
-          isNewHolder: false,
+          action: ActionType.RETURNED_TO_ISSUER,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
           timestamp,
+          hash,
+          remark,
         });
         break;
+      case "RETURN_TO_ISSUER_ACCEPTED":
       case "SURRENDER_ACCEPTED":
+        // Classic ETR shred, or BoE shred after an actual return-to-issuer.
+        // Reject/discharge arrive as STATUS_REJECTED / STATUS_DISCHARGED.
         historyChain.push({
-          action: ActionType.SURRENDER_ACCEPTED,
-          isNewBeneficiary: false,
-          isNewHolder: false,
+          action: ActionType.RETURN_TO_ISSUER_ACCEPTED,
+          isNewBeneficiary: isObligation && showOwner,
+          isNewHolder: isObligation && showHolder,
+          beneficiary: isObligation ? beneficiary : undefined,
+          holder: isObligation ? holder : undefined,
           timestamp,
+          hash,
+          remark,
         });
         break;
+      case "RETURN_TO_ISSUER_REJECTED":
       case "SURRENDER_REJECTED":
         historyChain.push({
-          action: ActionType.SURRENDER_REJECTED,
-          isNewBeneficiary: true,
-          isNewHolder: true,
+          action: ActionType.RETURN_TO_ISSUER_REJECTED,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder || showOwner,
           timestamp,
           beneficiary,
-          holder: beneficiary,
+          holder: holder || beneficiary,
           hash,
+          remark,
         });
         break;
       case "INITIAL":
         historyChain.push({
           action: ActionType.INITIAL,
-          isNewBeneficiary: true,
-          isNewHolder: true,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
           beneficiary,
           holder,
           timestamp,
           hash,
+          remark,
+        });
+        break;
+      case "REJECT_TRANSFER_HOLDER":
+        historyChain.push({
+          action: ActionType.REJECT_TRANSFER_HOLDER,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        break;
+      case "REJECT_TRANSFER_BENEFICIARY":
+        historyChain.push({
+          action: ActionType.REJECT_TRANSFER_BENEFICIARY,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        break;
+      case "REJECT_TRANSFER_OWNERS":
+        historyChain.push({
+          action: ActionType.REJECT_TRANSFER_HOLDER,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        historyChain.push({
+          action: ActionType.REJECT_TRANSFER_BENEFICIARY,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        break;
+      case "STATUS_INITIALIZED":
+        historyChain.push({
+          action: ActionType.INITIAL,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        break;
+      case "STATUS_ACCEPTED":
+        historyChain.push({
+          action: ActionType.STATUS_ACCEPTED,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        break;
+      case "STATUS_REJECTED":
+        historyChain.push({
+          action: ActionType.STATUS_REJECTED,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
+        });
+        break;
+      case "STATUS_DISCHARGED":
+        historyChain.push({
+          action: ActionType.STATUS_DISCHARGED,
+          isNewBeneficiary: showOwner,
+          isNewHolder: showHolder,
+          beneficiary,
+          holder,
+          timestamp,
+          hash,
+          remark,
         });
         break;
 
@@ -138,45 +299,68 @@ const getHistoryChain = (endorsementChain?: EndorsementChain) => {
   return historyChain;
 };
 
-const DetailsEntity: React.FunctionComponent<DetailsEntityProps> = ({ title, address }) => {
+const AddressBlock: React.FunctionComponent<AddressBlockProps> = ({ title, address }) => {
   return (
-    <div className="w-full lg:w-1/3" data-testid={`row-event-${title}`}>
-      <div className="flex flex-nowrap pr-8">
-        <div className="relative shrink-0 lg:hidden" style={{ width: "40px" }}>
-          <div className="absolute left-0 right-0 mx-auto h-full">
-            <div className="absolute top-0 left-1/2 h-full border-l border-dashed border-cerulean-500 path" />
-          </div>
+    <div className="flex flex-nowrap flex-col gap-1 overflow-hidden self-center p-2">
+      <h5 className="text-cloud-400 lg:hidden">{title}</h5>
+      <h6 className="text-cerulean-500 break-all" data-testid="address-entity">
+        {address}
+      </h6>
+      <AddressResolvedName address={address} />
+    </div>
+  );
+};
+
+const RemarkBlock: React.FunctionComponent<RemarkBlockProps> = ({ remark }) => {
+  return <div className="bg-cloud-100/30 text-cloud-400 break-all w-full rounded-lg p-2 mb-0 lg:mb-2">{remark}</div>;
+};
+
+const LineDesign: React.FunctionComponent<{ first?: boolean }> = ({ first }) => {
+  if (first) {
+    return (
+      <div className="relative shrink-0 lg:order-2" style={{ width: "40px" }}>
+        <div className="absolute left-0 right-0 mx-auto h-full">
+          <div className="absolute left-1/2 h-full border-l border-dashed border-cerulean-500 dot-path" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cerulean-500 h-3 w-3" />
         </div>
-        <div className="pb-4 lg:pb-0">
-          <h5 className="text-cloud-800 mr-2 lg:hidden">{title}</h5>
-          <h6 className="text-cerulean-500 break-all" data-testid="address-entity">
-            {address}
-            <AddressResolvedName address={address} />
-          </h6>
+      </div>
+    );
+  } else {
+    return (
+      <div className="relative shrink-0 lg:hidden" style={{ width: "40px" }}>
+        <div className="absolute left-0 right-0 mx-auto h-full">
+          <div className="absolute top-0 left-1/2 h-full border-l border-dashed border-cerulean-500 path" />
         </div>
+      </div>
+    );
+  }
+};
+
+const DetailsEntity: React.FunctionComponent<DetailsEntityProps> = ({ title, address, remark }) => {
+  return (
+    <div className="w-full lg:w-1/4" data-testid={`row-event-${title}`}>
+      <div className="flex flex-nowrap h-full w-full">
+        <LineDesign />
+        {address && <AddressBlock title={title} address={address} />}
+        {remark && <RemarkBlock remark={remark} />}
       </div>
     </div>
   );
 };
 
-const EndorsementChainData: React.FunctionComponent<any> = ({ index, data }) => {
+const EndorsementChainData: React.FunctionComponent<{ index: number; data: HistoryChain }> = ({ index, data }) => {
   return (
-    <div className="flex flex-wrap items-center" data-testid={`row-event-${index}`}>
-      <div className="w-full lg:w-1/3">
-        <div className="flex flex-nowrap">
-          <div className="relative shrink-0 lg:order-2" style={{ width: "40px" }}>
-            <div className="absolute left-0 right-0 mx-auto h-full">
-              <div className="absolute left-1/2 h-full border-l border-dashed border-cerulean-500 dot-path" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cerulean-500 h-3 w-3" />
-            </div>
-          </div>
-          <div className="lg:ml-auto lg:order-1">
-            <div className="lg:text-right py-6 lg:py-4">
+    <div className="flex flex-wrap align-stretch" data-testid={`row-event-${index}`}>
+      <div className="w-full lg:w-1/4">
+        <div className="flex flex-nowrap h-full w-full">
+          <LineDesign first />
+          <div className="lg:ml-auto lg:order-1 flex flex-nowrap p-2 h-full">
+            <div className="lg:text-right flex flex-col flex-nowrap gap-1 self-center">
               <h4 className="text-cloud-800" data-testid="action-title">
                 {data.action}
               </h4>
               {data.timestamp && (
-                <h6 className="text-cloud-800">{format(new Date(data.timestamp ?? 0), "do MMM yyyy, hh:mm aa")}</h6>
+                <h6 className="text-cloud-400">{format(new Date(data.timestamp ?? 0), "do MMM yyyy, hh:mm aa")}</h6>
               )}
             </div>
           </div>
@@ -184,6 +368,18 @@ const EndorsementChainData: React.FunctionComponent<any> = ({ index, data }) => 
       </div>
       <DetailsEntity title="Owner" address={data.isNewBeneficiary ? data.beneficiary : ""} />
       <DetailsEntity title="Holder" address={data.isNewHolder ? data.holder : ""} />
+      <div className="w-full lg:w-1/4" data-testid="row-event-Remark">
+        <div className="flex flex-nowrap h-full w-full">
+          <LineDesign />
+          <div className="flex flex-col flex-nowrap gap-1 overflow-hidden self-center p-2 w-full">
+            {data?.remark ? <RemarkBlock remark={data.remark} /> : null}
+          </div>
+        </div>
+      </div>
+      <div className="w-full flex flex-nowrap lg:hidden divider">
+        <LineDesign />
+        <div className="border-b border-cloud-100 border-solid m-2 w-full" />
+      </div>
     </div>
   );
 };
@@ -194,8 +390,10 @@ export const EndorsementChainLayout: FunctionComponent<EndorsementChainLayout> =
   error,
   pending,
   providerDocumentationURL,
+  isObligation = false,
 }) => {
-  const historyChain = getHistoryChain(endorsementChain);
+  const historyChain = getHistoryChain(endorsementChain, isObligation);
+  const tokenRegistryVersion = useTokenRegistryVersion();
 
   return (
     <div className="container my-8">
@@ -213,14 +411,19 @@ export const EndorsementChainLayout: FunctionComponent<EndorsementChainLayout> =
           </p>
         </div>
       )}
-      <div className="bg-white rounded-xl shadow-xl px-3 py-8 lg:px-8">
-        <div className="hidden lg:block mb-8">
-          <div className="flex text-cloud-800">
-            <h5 className="w-1/3">Action/Date</h5>
-            <h5 className="w-1/3">Owner</h5>
-            <h5 className="w-1/3">Holder</h5>
+      <div className="bg-white rounded-xl shadow-xl px-4 py-8 lg:px-8">
+        <div className="hidden lg:block">
+          <div className="flex text-cloud-800 p-2">
+            <h5 className="w-1/4">Action/Date</h5>
+            <h5 className="w-1/4">Owner</h5>
+            <h5 className="w-1/4">Holder</h5>
+            {tokenRegistryVersion === TokenRegistryVersions.V5 ? (
+              <h5 className="w-1/4">Remark</h5>
+            ) : (
+              <h5 className="w-1/4 text-cloud-400">Remark (Unavailable on TR V4)</h5>
+            )}
           </div>
-          <div className="border-t" />
+          <div className="border-t border-cloud-100 border-solid my-2 w-full" />
         </div>
 
         {pending && !endorsementChain && !error && <EndorsementChainLoading />}

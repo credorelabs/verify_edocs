@@ -1,22 +1,23 @@
 import React from "react";
 import { Route, Switch } from "react-router-dom";
 import { PrivateRoute } from "./components/PrivateRoute";
+import { PageNotFound } from "./pages/pageNotFound";
 import VerifyPage from "./pages/verify";
 import { ViewerPage } from "./pages/viewer";
 import { paths } from "./config/routes-config";
+import EndorsementChainPage from "./pages/endorsement-chain";
 
 export const FORM_SG_URL = "https://www.form.gov.sg/635f32c5001b2d0011fff09b";
 
 const renderViewer = (): React.ReactElement => <ViewerPage />;
-// const renderMagicViewer = (): React.ReactElement => <ViewerPage isMagicDemo />;
 
 type RouteComponents = Record<string, Omit<RouteInterface, "path">>;
 
 const routeComponents: RouteComponents = {
-  verify: { exact:true, component: VerifyPage },
-  // viewer: { component: ViewerPage },
-  viewer: { exact:true, render: renderViewer },
-  // notFound: { component: PageNotFound },
+  verify: { exact: true, component: VerifyPage },
+  viewer: { exact: true, render: renderViewer },
+  endorsementChain: { exact: true, component: EndorsementChainPage },
+  notFound: { component: PageNotFound },
 };
 
 const pathKeys = Object.keys(paths);

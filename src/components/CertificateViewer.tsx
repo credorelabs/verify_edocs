@@ -1,66 +1,87 @@
-import { utils } from "@tradetrust-tt/tradetrust";
+import {
+  getObligationRegistryAddress,
+  getTokenId,
+  getTokenRegistryAddress,
+  isObligationRecord,
+  isTransferableRecord,
+} from "@trustvc/trustvc";
 import React, { FunctionComponent, useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useProviderContext } from "../common/contexts/provider";
 import { useTokenInformationContext } from "../common/contexts/TokenInformationContext";
 import { RootState } from "../reducers";
-import { resetCertificateState, updateCertificate } from "../reducers/certificate";
-import { resetDemoState } from "../reducers/demo-verify";
+import { resetCertificateState, updateCertificate, updateFilename, updateKeyId } from "../reducers/certificate";
 import { TemplateProps } from "../types";
 import { getLogger } from "../utils/logger";
-import { getAttachments, getTokenRegistryAddress, WrappedOrSignedOpenAttestationDocument } from "../utils/shared";
+import {
+  getAttachments,
+  getKeyId,
+  getOpenAttestationData,
+  WrappedOrSignedOpenAttestationDocument,
+} from "../utils/shared";
+import { isValidAttachmentData } from "../utils/attachmentValidation";
 import { AssetManagementApplication } from "./AssetManagementPanel/AssetManagementApplication";
 import { CertificateViewerErrorBoundary } from "./CertificateViewerErrorBoundary/CertificateViewerErrorBoundary";
 import { DecentralisedRendererContainer } from "./DecentralisedTemplateRenderer/DecentralisedRenderer";
 import { MultiTabs } from "./DecentralisedTemplateRenderer/MultiTabs";
-import { DocumentStatus } from "./DocumentStatus";
 import { DocumentUtility } from "./DocumentUtility";
 import { EndorsementChainContainer } from "./EndorsementChain";
+import { InvalidAttachmentsBanner } from "./InvalidAttachmentsBanner";
 import { ObfuscatedMessage } from "./ObfuscatedMessage";
+import ScrollTip from "./ScrollTip";
 import { TabPaneAttachments } from "./TabPaneAttachments";
-import { Banner } from "./UI/Banner";
-import { FORM_SG_URL } from "../routes";
 
 const { trace } = getLogger("component: certificateviewer");
 
-
-const renderBanner = (isSample: boolean, isMagic: boolean | undefined) => {
-  const props = {
-    to: FORM_SG_URL,
-    buttonText: "Contact us now",
-    title: "Ready to learn how TradeTrust can benefit your business?",
-    absolute: true,
-  };
-  if (isSample || isMagic) {
-    return <Banner className="mt-8" {...props} />;
-  } else {
-    return null;
-  }
-};
-
 interface CertificateViewerProps {
-  isMagicDemo?: boolean;
   document: WrappedOrSignedOpenAttestationDocument;
+  filename: string;
 }
 
-export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ isMagicDemo, document }) => {
-  const isTransferableAsset = utils.isTransferableAsset(document);
+export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ document, filename }) => {
+  const isTransferableAssetVal = isTransferableRecord(document);
+  const isObligationAssetVal = isObligationRecord(document);
   let tokenId = "";
-  if (isTransferableAsset) {
+  if (isTransferableAssetVal || isObligationAssetVal) {
     try {
-      tokenId = `0x${utils.getAssetId(document)}`;
+      tokenId = getTokenId(document);
     } catch (e) {
       trace(e);
     }
   }
 
-  const tokenRegistryAddress = isTransferableAsset ? getTokenRegistryAddress(document) : "";
+  const tokenRegistryAddress = isObligationAssetVal
+    ? getObligationRegistryAddress(document) || ""
+    : isTransferableAssetVal
+    ? getTokenRegistryAddress(document)
+    : "";
+  const keyId = getKeyId(document);
+  const docData = getOpenAttestationData(document);
+  const expirationDate = docData.expirationDate || docData.validUntil;
+  const isExpired = !!(expirationDate && new Date(expirationDate) < new Date());
   const isTransferableDocument = !!tokenRegistryAddress;
   const [templates, setTemplates] = useState<TemplateProps[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [showEndorsementChain, setShowEndorsementChain] = useState(false);
   const attachments = getAttachments(document);
   const hasAttachments = attachments ? attachments.length > 0 : false;
+
+  const filteredAttachments = attachments?.filter((attachment) => {
+    return attachment.type === "custom-template" || attachment.type === "application/pdf" || !attachment.type;
+  });
+
+  // Check for invalid attachments
+  const invalidAttachments =
+    filteredAttachments
+      ?.map((attachment, index) => ({
+        ...attachment,
+        index,
+        isInvalid:
+          typeof attachment.data === "string" ? !isValidAttachmentData(attachment.data, attachment.type) : false,
+      }))
+      .filter((attachment) => attachment.isInvalid) || [];
+  const hasInvalidAttachments = invalidAttachments.length > 0;
+
   const { initialize, resetStates: resetTokenInformationState } = useTokenInformationContext();
   const dispatch = useDispatch();
 
@@ -69,20 +90,21 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
 
   const resetCertificateData = useCallback(() => {
     dispatch(resetCertificateState());
-    dispatch(resetDemoState());
-  }, [dispatch]);
+    // Bypass filename update error
+    dispatch(updateFilename(filename));
+  }, [dispatch, filename]);
 
   const { currentChainId } = useProviderContext();
 
-  /*  Update the certificate when network is changed UNLESS
-  - it is Magic Demo certificate, as the network does not change for it (fixed at Sepolia).
-  - it is Sample certificate, as it is already updated when user changed network from network selector dropdown provided by website UI (not the metamask extension network selector)
+  /*  Update the certificate when network is changed UNLESS it is a Sample certificate,
+  as it is already updated when user changed network from network selector dropdown provided by website UI (not the metamask extension network selector)
    */
   useEffect(() => {
-    if (isMagicDemo || isSampleDocument) return;
+    if (isSampleDocument) return;
     resetCertificateData();
+    dispatch(updateKeyId(keyId || ""));
     dispatch(updateCertificate(certificateDoc));
-  }, [certificateDoc, currentChainId, dispatch, resetCertificateData, isMagicDemo, isSampleDocument]);
+  }, [certificateDoc, currentChainId, keyId, dispatch, resetCertificateData, isSampleDocument]);
 
   /*
   initialise the meta token information context when new tokenId
@@ -91,14 +113,21 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
   useEffect(() => {
     if (tokenRegistryAddress) {
       trace("initialise token information context");
-      initialize(tokenRegistryAddress, tokenId);
+      initialize(tokenRegistryAddress, tokenId, isObligationAssetVal);
     }
     return () => {
       trace("resetting token information on unmount");
       resetTokenInformationState();
       resetCertificateData();
     };
-  }, [tokenId, tokenRegistryAddress, initialize, resetTokenInformationState, resetCertificateData]);
+  }, [
+    tokenId,
+    tokenRegistryAddress,
+    isObligationAssetVal,
+    initialize,
+    resetTokenInformationState,
+    resetCertificateData,
+  ]);
 
   const childRef = React.useRef<{ print: () => void }>();
 
@@ -118,56 +147,68 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
       childRef.current.print();
     }
   };
-
   const renderedEndorsementChain = (
-    <div className="bg-cerulean-50 no-print">
+    <div className="max-w-screen-lg mx-auto px-4 viewer-chain-view no-print">
       <ObfuscatedMessage document={document} />
       {isTransferableDocument && (
         <EndorsementChainContainer
           tokenId={tokenId}
+          keyId={keyId}
           tokenRegistry={tokenRegistryAddress}
           setShowEndorsementChain={setShowEndorsementChain}
+          isObligation={isObligationAssetVal}
         />
       )}
     </div>
   );
 
   const renderedCertificateViewer = (
-    <>
-      <div className="bg-gray-50">
-        <div className="max-w-screen-xl mx-auto">
-        <div className="no-print">
-          {!isTransferableDocument && <DocumentStatus isMagicDemo={isMagicDemo} />}
-          {renderBanner(isSampleDocument, isMagicDemo)}
-          <ObfuscatedMessage document={document} />
-          {isTransferableDocument && (
-            <AssetManagementApplication
-              isMagicDemo={isMagicDemo}
-              tokenId={tokenId}
-              tokenRegistryAddress={tokenRegistryAddress}
-              setShowEndorsementChain={setShowEndorsementChain}
-            />
-          )}
-        </div>
-          </div>
-
-        <div className="no-print mt-16">
+    <div className="max-w-screen-lg mx-auto px-4">
+      <section className="viewer-control-region no-print">
+        {!isTransferableDocument && (
+          <AssetManagementApplication
+            isTransferableDocument={isTransferableDocument}
+            isSampleDocument={isSampleDocument}
+            isExpired={isExpired}
+          />
+        )}
+        <ObfuscatedMessage document={document} />
+        {isTransferableDocument && (
+          <AssetManagementApplication
+            tokenId={tokenId}
+            tokenRegistryAddress={tokenRegistryAddress}
+            setShowEndorsementChain={setShowEndorsementChain}
+            isTransferableDocument={isTransferableDocument}
+            isSampleDocument={isSampleDocument}
+            isExpired={isExpired}
+          />
+        )}
+      </section>
+      <section className="viewer-document-region">
+        <InvalidAttachmentsBanner
+          hasInvalidAttachments={hasInvalidAttachments}
+          invalidAttachments={invalidAttachments}
+        />
+        <div className="viewer-tabs no-print">
           <MultiTabs
             hasAttachments={hasAttachments}
             attachments={attachments}
             templates={templates}
             setSelectedTemplate={setSelectedTemplate}
             selectedTemplate={selectedTemplate}
+            invalidAttachments={invalidAttachments}
           />
         </div>
-        <div className="bg-white py-6">
+        <div id="preview-block" className="viewer-document-canvas">
           {attachments && (
             <div className={`${selectedTemplate !== "attachmentTab" ? "hidden" : "block"}`}>
               <TabPaneAttachments attachments={attachments} />
             </div>
           )}
           <div className={`${selectedTemplate === "attachmentTab" ? "hidden" : "block"}`}>
-            {templates.length > 0 && <DocumentUtility document={document} onPrint={onPrint} />}
+            {templates.length > 0 && (
+              <DocumentUtility document={document} onPrint={onPrint} selectedTemplate={selectedTemplate} />
+            )}
             <DecentralisedRendererContainer
               rawDocument={document}
               updateTemplates={updateTemplates}
@@ -176,8 +217,10 @@ export const CertificateViewer: FunctionComponent<CertificateViewerProps> = ({ i
             />
           </div>
         </div>
-      </div>
-    </>
+      </section>
+
+      <ScrollTip targetId="preview-block" />
+    </div>
   );
 
   return (

@@ -2,6 +2,7 @@ import { UnsupportedNetworkError } from "../errors";
 import { ChainId, ChainInfo, ChainInfoObject } from "../../constants/chain-info";
 import { IS_DEVELOPMENT } from "../../config";
 import { MAIN_NETWORKS, TEST_NETWORKS } from "../../config/chain-config";
+import { encrypt } from "@trustvc/trustvc";
 
 /**
  * Gets the ChainInfoObject of a supported chain ID.
@@ -30,8 +31,14 @@ export const getSupportedChainIds = (): ChainId[] => {
   const isLocal = window.location.host.indexOf("localhost") > -1;
   const isTestEnv = process.env.NODE_ENV === "test";
   const networks = IS_DEVELOPMENT ? [...TEST_NETWORKS] : [...MAIN_NETWORKS];
-  // if (isTestEnv || isLocal) networks.push(ChainId.Local);
+  if (isTestEnv || isLocal) networks.push(ChainId.Local);
   return networks;
+};
+
+export const getUnsupportedChainIds = (): ChainId[] => {
+  const allNetworks = new Set([...MAIN_NETWORKS, ...TEST_NETWORKS, ChainId.Local]);
+  const supported = new Set(getSupportedChainIds());
+  return Array.from(allNetworks).filter((id) => !supported.has(id));
 };
 
 /**
@@ -51,6 +58,7 @@ export const walletSwitchChain = async (chainId: ChainId): Promise<void> => {
   const { ethereum } = window;
   if (!ethereum || !ethereum.request) return;
   try {
+    await ethereum.request({ method: "eth_requestAccounts" });
     await ethereum.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: `0x${(+chainId).toString(16)}` }],
@@ -75,9 +83,13 @@ export const walletSwitchChain = async (chainId: ChainId): Promise<void> => {
 export const walletAddChain = async (chainId: ChainId): Promise<void> => {
   const { ethereum } = window;
   if (!ethereum || !ethereum.request) return;
+
   const chainInfo = ChainInfo[chainId];
+  if (!chainInfo) return;
+
   const rpcUrl = chainInfo.rpcUrl;
   if (!rpcUrl) return;
+
   try {
     await ethereum.request({
       method: "wallet_addEthereumChain",
@@ -95,4 +107,20 @@ export const walletAddChain = async (chainId: ChainId): Promise<void> => {
     console.error(`Network ${chainId.toString()} could not be added.`, e);
     throw e;
   }
+};
+
+/**
+ * encrypts the given remark with id using trustvc encryption
+ * @param remark Rejection Remark
+ * @param keyId Key ID
+ * @returns Encrypted remark in hex format
+ */
+export const encryptRemark = (remark: string, keyId?: string): string => {
+  return encrypt(remark, keyId ?? "");
+};
+
+export const isSupportedNetwork = (chainId: ChainId | number | string, networks?: ChainInfoObject[]) => {
+  return (networks ?? getSupportedChainInfo()).some(
+    (chainInfoObj) => chainInfoObj.chainId.toString() === chainId.toString()
+  );
 };

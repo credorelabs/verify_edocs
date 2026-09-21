@@ -1,16 +1,44 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Footer } from "./components/Layout/Footer";
-import { NavigationBar } from "./components/Layout/NavigationBar";
+import { NavigationBar, rightNavItems } from "./components/Layout/NavigationBar";
+import PopupMessage from "./components/PopupMessage";
+import { Overlay } from "./components/UI/Overlay";
 import { Routes, routes } from "./routes";
+import CookieNotice from "./components/CookieNotice";
 
 const AppContainer = (): React.ReactElement => {
+  const location = useLocation();
+  const [toggleNavBar, setToggleNavBar] = useState(false);
+
+  // Clear session storage on initial load
+  useEffect(() => {
+    sessionStorage.removeItem("account");
+    sessionStorage.removeItem("chainId");
+  }, []);
+
+  useEffect(() => {
+    setToggleNavBar(false);
+    window.scrollTo(0, 0);
+  }, [location]);
 
   return (
-    <div className="flex flex-col min-h-full bg-cover">
-      <NavigationBar/>
-        <Routes routes={routes} />
-      <Footer />
-      {/* <Overlay /> */}
+    <div className="app-frame min-h-full" data-location={location.pathname}>
+      <NavigationBar
+        toggleNavBar={toggleNavBar}
+        setToggleNavBar={setToggleNavBar}
+        leftItems={[]}
+        rightItems={rightNavItems}
+      />
+      <div className="app-workspace">
+        {/* <PopupMessage /> */}
+        <main className="app-main flex-1">
+          <Routes routes={routes} />
+        </main>
+        {/* <CookieNotice /> */}
+        <Footer />
+      </div>
+      <Overlay />
     </div>
   );
 };
