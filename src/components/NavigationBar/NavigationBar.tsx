@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ArrowRight, ExternalLink, Menu, Shield, X } from "react-feather";
 import { IS_DEVELOPMENT } from "../../config";
 
-const TRADETRUST_VERIFY_URL = IS_DEVELOPMENT ? "https://dev.tradetrust.io/verify" : "https://tradetrust.io/verify";
+const TRADETRUST_VERIFY_URL = IS_DEVELOPMENT ? "https://dev.tradetrust.io" : "https://ref.tradetrust.io";
 
 interface NavLinkItem {
   label: string;
