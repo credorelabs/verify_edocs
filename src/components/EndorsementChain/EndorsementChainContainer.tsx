@@ -1,28 +1,30 @@
 import React, { FunctionComponent, useContext, useEffect } from "react";
-import { useEndorsementChain } from "../../common/hooks/useEndorsementChain";
-import { EndorsementChainLayout } from "./EndorsementChainLayout";
-import {
-  OverlayContext,
-  OverlayContextProvider,
-  ProviderTimeoutMessage,
-} from "@tradetrust-tt/tradetrust-ui-components";
 import { useTimer } from "react-timer-hook";
+import { OverlayContext } from "../../common/contexts/OverlayContext";
+import { useEndorsementChain } from "../../common/hooks/useEndorsementChain";
+import { URLS } from "../../constants";
+import { EndorsementChainLayout } from "./EndorsementChainLayout";
+import { ProviderTimeoutMessage } from "../UI/Overlay/OverlayContent";
 
-const ProviderDocumentationURL = "https://docs.tradetrust.io/docs/advanced/add-polygon-networks-to-metamask-wallet/";
+const ProviderDocumentationURL = `${URLS.DOCS}/docs/how-tos/advanced/additional-network-metamask-guide/`;
 const timeout = 60;
 
 interface EndorsementChainContainer {
   tokenRegistry: string;
   tokenId: string;
+  keyId?: string;
   setShowEndorsementChain: (payload: boolean) => void;
+  isObligation?: boolean;
 }
 
 export const EndorsementChainContainer: FunctionComponent<EndorsementChainContainer> = ({
   tokenRegistry,
   tokenId,
+  keyId,
   setShowEndorsementChain,
+  isObligation,
 }) => {
-  const endorsementChainProps = useEndorsementChain(tokenRegistry, tokenId);
+  const endorsementChainProps = useEndorsementChain(tokenRegistry, tokenId, keyId, isObligation);
   const expiryTimestamp = new Date();
   const { showOverlay } = useContext(OverlayContext);
   expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + timeout);
@@ -52,12 +54,11 @@ export const EndorsementChainContainer: FunctionComponent<EndorsementChainContai
   }, [error, pause]);
 
   return (
-    <OverlayContextProvider>
-      <EndorsementChainLayout
-        {...endorsementChainProps}
-        setShowEndorsementChain={setShowEndorsementChain}
-        providerDocumentationURL={ProviderDocumentationURL}
-      />
-    </OverlayContextProvider>
+    <EndorsementChainLayout
+      {...endorsementChainProps}
+      setShowEndorsementChain={setShowEndorsementChain}
+      providerDocumentationURL={ProviderDocumentationURL}
+      isObligation={isObligation}
+    />
   );
 };

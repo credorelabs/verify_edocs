@@ -4,6 +4,7 @@ import { Paperclip } from "react-feather";
 import { getLogger } from "../../../utils/logger";
 import { NestedDocumentState } from "./../../../constants/NestedDocumentState";
 import { getOpenAttestationData } from "../../../utils/shared";
+import { getSafeHostUrl } from "../../../common/utils/hostValidation";
 
 const { error } = getLogger("component:attachmentlink");
 
@@ -51,7 +52,7 @@ export const getExtension = (mimeType: string | undefined): React.ReactNode => {
 };
 
 const openTab = (data: string) => {
-  const url = `${window.location.protocol}//${window.location.host}`;
+  const url = getSafeHostUrl();
   const childWin = window.open(url, "_blank") as Window; // to omit noopener noreferrer for this case, otherwise unable to postMessage
 
   childWin.onload = (): void => {
@@ -80,11 +81,19 @@ const isOpenAttestationFile = (decodedData: string) => {
 export const AttachmentLink: FunctionComponent<AttachmentLinkProps> = ({ filename, data, type, path }) => {
   let filesize = "0";
   let canOpenFile = false;
+
+  const prefix = `data:${type};base64,`;
   const hasBase64 = !!(data && type);
   const downloadHref = hasBase64 ? `data:${type};base64,${data}` : path || "#";
-  const decodedData = atob(data);
-  canOpenFile = isOpenAttestationFile(decodedData);
-  filesize = prettyBytes(decodedData.length);
+  try {
+    const decodedData = atob(data.startsWith(prefix) ? data.slice(prefix.length).trim() : data);
+    canOpenFile = isOpenAttestationFile(decodedData);
+    filesize = prettyBytes(decodedData.length);
+  } catch (e) {
+    console.warn("Invalid base64 data in attachment link:", e);
+    canOpenFile = false;
+    filesize = "Unknown size";
+  }
 
   return (
     <div className="transition duration-300 ease-out flex-1 rounded-xl border border-cloud-100 shadow-lg py-2 px-4 hover:no-underline">

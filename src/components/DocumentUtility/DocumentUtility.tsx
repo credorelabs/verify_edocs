@@ -1,35 +1,65 @@
-import { v2, utils } from "@tradetrust-tt/tradetrust";
-import { ButtonIcon } from "@tradetrust-tt/tradetrust-ui-components";
+import { ButtonIcon } from "../Button";
+import { isRawV3Document, SignedVerifiableCredential, v2 } from "@trustvc/trustvc";
 import QRCode, { ImageSettings } from "qrcode.react";
 import React, { FunctionComponent, useState } from "react";
+import { Download, Printer } from "react-feather";
+import { WrappedOrSignedOpenAttestationDocument, getOpenAttestationData, getTemplateUrl } from "../../utils/shared";
 import { SvgIcon, SvgIconQRCode } from "../UI/SvgIcon";
-import { WrappedOrSignedOpenAttestationDocument, getOpenAttestationData } from "../../utils/shared";
-import { DownloadForOffline, Print } from "@mui/icons-material";
+import { getQRCodeLink } from "../../common/utils/qrCode";
 interface DocumentUtilityProps {
-  document: WrappedOrSignedOpenAttestationDocument;
+  document: WrappedOrSignedOpenAttestationDocument | SignedVerifiableCredential;
   onPrint: () => void;
+  selectedTemplate: string;
 }
 
-export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ document, onPrint }) => {
+interface DocumentWithAdditionalMetadata extends v2.OpenAttestationDocument {
+  name?: string;
+  links?: {
+    self?: {
+      href?: string;
+    };
+  };
+}
+
+export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ document, onPrint, selectedTemplate }) => {
   const [qrCodePopover, setQrCodePopover] = useState(false);
-  const documentWithMetadata = getOpenAttestationData(document) as any; // Extending document data to account for undefined metadata in OA schema
-  const { links }: any = utils.isRawV3Document(documentWithMetadata)
+  const documentWithMetadata = getOpenAttestationData(
+    document as WrappedOrSignedOpenAttestationDocument
+  ) as DocumentWithAdditionalMetadata; // Extending document data to account for undefined metadata in OA schema
+
+  const { name } = (isRawV3Document(documentWithMetadata) as any)
     ? documentWithMetadata.credentialSubject
     : documentWithMetadata;
-  const fileName = documentWithMetadata?.$template?.name || "Untitled";
-  const qrcodeUrl = links?.self?.href;
-
+  const fileName = name ?? "Untitled";
+  const qrcodeUrl = getQRCodeLink(document);
+  const templateURL = getTemplateUrl(document);
   const imageSettings: ImageSettings = {
-    src: `/static/images/credore/qrlogo.png`,
+    src: `/static/images/logo-qrcode.png`,
     height: 50,
     width: 55,
     excavate: true,
   };
 
   return (
-    <div className="container no-print bg-white pb-8">
-      <div className="flex flex-wrap">
-        <div className="w-auto ml-auto">
+    <div className="max-w-screen-md no-print bg-white pb-4">
+      <div className="flex flex-wrap items-start gap-4">
+        {selectedTemplate !== "default-template" && (
+          <div className="flex-1">
+            <h4 className="text-base font-semibold mb-1">Rendered View:</h4>
+            <h6 className="text-sm break-words">
+              {selectedTemplate.trim().toUpperCase()} rendered from{" "}
+              <a href={templateURL} className="text-blue-500 underline break-all">
+                {templateURL}
+              </a>
+            </h6>
+          </div>
+        )}
+
+        <div
+          className={`${
+            selectedTemplate !== "default-template" ? "" : "w-full"
+          } flex justify-end items-start space-x-3 mt-4 sm:mt-0`}
+        >
           {qrcodeUrl && (
             <div
               className="relative"
@@ -40,7 +70,6 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
               <ButtonIcon
                 className="bg-white border-2 border-cloud-100 rounded-xl hover:bg-cloud-100"
                 aria-label="document-utility-qr-button"
-                style={{ width: "auto", height: "auto" }}
               >
                 <SvgIcon className="text-cerulean-500" strokeWidth="0.5" fill="currentColor">
                   <SvgIconQRCode />
@@ -63,32 +92,28 @@ export const DocumentUtility: FunctionComponent<DocumentUtilityProps> = ({ docum
               </div>
             </div>
           )}
-        </div>
-        <div className="w-auto ml-3">
-          <ButtonIcon
-            className="bg-white text-cerulean-500 border-2 border-cloud-100 rounded-xl hover:bg-cloud-100"
-            aria-label="document-utility-print-button"
-            onClick={() => onPrint()}
-            style={{ width: "auto", height: "auto" }}
-          >
-            <Print className="text-[#4fd1c5]"/>
-          </ButtonIcon>
-        </div>
-        <div className="w-auto ml-3">
-          <a
-            download={`${fileName}.tt`}
-            target="_black"
-            href={`data:text/json;,${encodeURIComponent(JSON.stringify(document, null, 2))}`}
-            role="button"
-            aria-label="document-utility-download"
-          >
+          <div className="w-auto ml-3">
             <ButtonIcon
               className="bg-white text-cerulean-500 border-2 border-cloud-100 rounded-xl hover:bg-cloud-100"
-              style={{ width: "auto", height: "auto" }}
+              aria-label="document-utility-print-button"
+              onClick={() => onPrint()}
             >
-              <DownloadForOffline className="text-[#4fd1c5]"/>
+              <Printer />
             </ButtonIcon>
-          </a>
+          </div>
+          <div className="w-auto ml-3">
+            <a
+              download={`${fileName}.tt`}
+              target="_black"
+              href={`data:text/json;,${encodeURIComponent(JSON.stringify(document, null, 2))}`}
+              role="button"
+              aria-label="document-utility-download"
+            >
+              <ButtonIcon className="bg-white text-cerulean-500 border-2 border-cloud-100 rounded-xl hover:bg-cloud-100">
+                <Download />
+              </ButtonIcon>
+            </a>
+          </div>
         </div>
       </div>
     </div>

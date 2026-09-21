@@ -1,166 +1,209 @@
-import {
-  Button,
-  MessageTitle,
-  OverlayContext,
-  showDocumentTransferMessage,
-} from "@tradetrust-tt/tradetrust-ui-components";
 import React, { FunctionComponent, useContext } from "react";
-import { TagBorderedLg } from "../../../../UI/Tag";
-import { AssetInformationPanel } from "../../../AssetInformationPanel";
+import { OverlayContext } from "../../../../../common/contexts/OverlayContext";
+import { Button, ButtonHeight } from "../../../../Button";
+import { MessageTitle, showDocumentTransferMessage } from "../../../../UI/Overlay/OverlayContent";
+import { TagBordered, TagBorderedSm } from "../../../../UI/Tag";
 import { AssetManagementActions } from "../../../AssetManagementActions";
+import { OBLIGATION_STATUS_LABEL, ObligationDocumentStatus } from "../../../../../constants/obligation";
 import { AssetManagementDropdown } from "../../AssetManagementDropdown";
 import { EditableAssetTitle } from "./../EditableAssetTitle";
+import ConnectToBlockchainModel from "../../../../ConnectToBlockchain";
+import { IconSuccess } from "../../../../UI/Icon";
 
 interface ActionSelectionFormProps {
-  onSetFormAction: (nextFormAction: AssetManagementActions) => void;
-  tokenRegistryAddress: string;
   beneficiary?: string;
   holder?: string;
+  nominee?: string;
+
+  onSetFormAction: (nextFormAction: AssetManagementActions) => void;
+  tokenRegistryAddress: string;
   account?: string;
-  canSurrender: boolean;
-  canHandleShred?: boolean;
-  canHandleRestore?: boolean;
-  onConnectToWallet: () => void;
-  canChangeHolder: boolean;
-  canEndorseBeneficiary: boolean;
-  isSurrendered: boolean;
-  isTokenBurnt: boolean;
-  canNominateBeneficiary: boolean;
-  canEndorseTransfer: boolean;
+  isGaslessEnabled?: boolean;
+  isReturnedToIssuer: boolean;
   setShowEndorsementChain: (payload: boolean) => void;
   isTitleEscrow: boolean;
+  isRejectPendingConfirmation?: boolean;
+  isTokenBurnt: boolean;
+  isExpired?: boolean;
+
+  canReturnToIssuer: boolean;
+  canHandleShred?: boolean;
+  canHandleRestore?: boolean;
+  canTransferHolder: boolean;
+  canTransferBeneficiary: boolean;
+  canNominateBeneficiary: boolean;
+  canEndorseBeneficiary: boolean;
+  canTransferOwners: boolean;
+  canRejectOwnerHolderTransfer: boolean;
+  canRejectHolderTransfer: boolean;
+  canRejectOwnerTransfer: boolean;
+  isObligation?: boolean;
+  obligationStatus?: number;
+  canAcceptObligation?: boolean;
+  canRejectObligation?: boolean;
+  canDischargeObligation?: boolean;
 }
 
 export const ActionSelectionForm: FunctionComponent<ActionSelectionFormProps> = ({
   onSetFormAction,
-  tokenRegistryAddress,
   beneficiary,
   holder,
   account,
-  canSurrender,
+  isGaslessEnabled,
+  isReturnedToIssuer,
+  isTokenBurnt,
+  isTitleEscrow,
+  isRejectPendingConfirmation,
+  isExpired,
+  canTransferHolder,
+  canTransferBeneficiary,
+  canTransferOwners,
+  canNominateBeneficiary,
+  canEndorseBeneficiary,
+  canReturnToIssuer,
   canHandleShred,
   canHandleRestore,
-  onConnectToWallet,
-  canChangeHolder,
-  canEndorseBeneficiary,
-  isSurrendered,
-  isTokenBurnt,
-  canNominateBeneficiary,
-  canEndorseTransfer,
-  setShowEndorsementChain,
-  isTitleEscrow,
+  canRejectOwnerHolderTransfer,
+  canRejectHolderTransfer,
+  canRejectOwnerTransfer,
+  isObligation,
+  obligationStatus,
+  canAcceptObligation,
+  canRejectObligation,
+  canDischargeObligation,
 }) => {
   const canManage =
+    canTransferHolder ||
+    canTransferBeneficiary ||
+    canTransferOwners ||
+    canNominateBeneficiary ||
+    canEndorseBeneficiary ||
+    canReturnToIssuer ||
     canHandleShred ||
     canHandleRestore ||
-    canSurrender ||
-    canChangeHolder ||
-    canEndorseBeneficiary ||
+    canRejectOwnerHolderTransfer ||
+    canRejectHolderTransfer ||
+    canRejectOwnerTransfer ||
+    !!canAcceptObligation ||
+    !!canRejectObligation ||
+    !!canDischargeObligation;
+  // Obligation accept/reject/discharge use the paid contract-function path, not EIP-7702 gasless.
+  const hasGaslessEligibleActions =
+    canTransferHolder ||
+    canTransferBeneficiary ||
+    canTransferOwners ||
     canNominateBeneficiary ||
-    canEndorseTransfer;
+    canEndorseBeneficiary ||
+    canReturnToIssuer ||
+    canHandleShred ||
+    canHandleRestore ||
+    canRejectOwnerHolderTransfer ||
+    canRejectHolderTransfer ||
+    canRejectOwnerTransfer;
+  const showGaslessClaim = !!isGaslessEnabled && hasGaslessEligibleActions;
+  const obligationStatusLabel =
+    isObligation && obligationStatus !== undefined ? OBLIGATION_STATUS_LABEL[obligationStatus] : undefined;
+
+  const obligationStatusField = obligationStatusLabel ? (
+    <div data-testid="asset-title-status">
+      <h4 className="text-cloud-400 mb-2">Status:</h4>
+      <TagBordered
+        id="obligation-status-sign"
+        rounded="rounded-full"
+        className="border-cerulean-100 bg-cerulean-100 text-cerulean-500 inline-flex items-center h-10 px-4 py-2"
+      >
+        <h5 data-testid="obligationStatus" className="text-center break-keep">
+          {obligationStatusLabel}
+        </h5>
+      </TagBordered>
+    </div>
+  ) : null;
+
+  // Burnt BoE: reject/discharge get their own titles; "taken out of circulation" only for return-to-issuer shred.
+  const burntTokenLabel =
+    isObligation && obligationStatus === ObligationDocumentStatus.Rejected
+      ? "Bill rejected"
+      : isObligation && obligationStatus === ObligationDocumentStatus.Discharged
+      ? "Bill discharged"
+      : isObligation
+      ? "BoE taken out of circulation"
+      : "Taken out of circulation";
 
   const { showOverlay } = useContext(OverlayContext);
   const handleNoAccess = () => {
     showOverlay(showDocumentTransferMessage(MessageTitle.NO_MANAGE_ACCESS, { isSuccess: false }));
   };
 
-  const handleMetamaskError = (errorMesssage: string, errorCode: number) => {
-    const isUserDeniedAccountAuthorization = errorCode === 4001;
-
-    showOverlay(
-      showDocumentTransferMessage(errorMesssage, {
-        isSuccess: false,
-        isButtonMetamaskInstall: !isUserDeniedAccountAuthorization,
-      })
-    ); // there is 2 type of errors that will be handled here, 1st = NO_METAMASK (error thrown from provider.tsx), 2nd = NO_USER_AUTHORIZATION (error from metamask extension itself).
-  };
-
   const handleConnectWallet = async () => {
-    try {
-      await onConnectToWallet();
-    } catch (error: any) {
-      handleMetamaskError(error.message, error.code);
-    }
+    showOverlay(<ConnectToBlockchainModel collapsible={true} />);
   };
+
   return (
     <>
-      <div className="flex justify-between pb-4">
-        {!isSurrendered && !isTokenBurnt && isTitleEscrow && (
-          <>
-            <div className="w-full px-4 lg:w-1/2">
+      <div className="flex-1 flex flex-col flex-wrap justify-between gap-2">
+        {isTokenBurnt && (
+          <div className="flex-1 content-center space-y-2 md:space-x-2 md:space-y-0">
+            {isExpired && (
+              <TagBorderedSm
+                id="expired-sign"
+                rounded="rounded-full"
+                className="border-scarlet-100 bg-scarlet-100 text-scarlet-500 content-center justify-self-center w-full xs:w-auto h-10 px-4 py-2"
+              >
+                <h5 className="text-center break-keep">Expired</h5>
+              </TagBorderedSm>
+            )}
+            <TagBorderedSm
+              id="surrendered-sign"
+              rounded="rounded-full"
+              className="border-scarlet-100 bg-scarlet-100 text-scarlet-500 content-center justify-self-center w-full xs:w-auto h-10 px-4 py-2"
+            >
+              <h5 className="text-center break-keep">{burntTokenLabel}</h5>
+            </TagBorderedSm>
+          </div>
+        )}
+
+        {!isReturnedToIssuer && !isTokenBurnt && isTitleEscrow && (
+          <div className="flex-1 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 grid-flow-row gap-2">
+            <div className="col-span-1">
               <EditableAssetTitle role="Owner" value={beneficiary} isEditable={false} />
             </div>
-            <div className="w-full pl-4 lg:w-1/2 flex justify-end">
+            <div className="col-span-1">
               <EditableAssetTitle role="Holder" value={holder} isEditable={false} />
             </div>
-          </>
+            {obligationStatusField && <div className="col-span-1">{obligationStatusField}</div>}
+          </div>
         )}
-        
-        {isSurrendered && (
-          <div className="w-full px-4 lg:w-auto self-end">
-            <div className="py-4">
-              <TagBorderedLg id="surrender-sign" className="bg-white rounded-xl text-scarlet-500 border-scarlet-500">
-                <h3 className="text-4xl" data-testid="surrenderToIssuer">
-                  Surrendered To Issuer
-                </h3>
-              </TagBorderedLg>
+        {!isTokenBurnt && (
+          <div className="flex-1 flex flex-col flex-wrap md:flex-row md:flex-nowrap justify-between gap-2">
+            <div className="flex-1 content-center space-y-2 md:space-x-2 md:space-y-0">
+              {isExpired && (
+                <TagBordered
+                  id="expired-sign"
+                  rounded="rounded-full"
+                  className="border-scarlet-100 bg-scarlet-100 text-scarlet-500 content-center justify-self-center w-full xs:w-auto h-10 px-4 py-2"
+                >
+                  <h5 data-testid="expiredDoc" className="text-center break-keep">
+                    Expired
+                  </h5>
+                </TagBordered>
+              )}
+
+              {isReturnedToIssuer && (
+                <TagBordered
+                  id="surrender-sign"
+                  rounded="rounded-full"
+                  className="border-scarlet-100 bg-scarlet-100 text-scarlet-500 content-center justify-self-center w-full xs:w-auto h-10 px-4 py-2"
+                >
+                  <h5 data-testid="surrenderToIssuer" className="text-center break-keep">
+                    ETR returned to Issuer
+                  </h5>
+                </TagBordered>
+              )}
+
+              {isReturnedToIssuer && obligationStatusField}
             </div>
           </div>
         )}
-        {isTokenBurnt && (
-          <div className="w-full px-4 lg:w-auto self-end">
-            <div className="py-4">
-              <TagBorderedLg id="surrendered-sign" className="bg-white rounded-xl text-scarlet-500 border-scarlet-500">
-                <h3 className="text-4xl">Surrendered</h3>
-              </TagBorderedLg>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="flex justify-between pb-4">
-      <div className="flex flex-wrap w-full px-4 lg:w-1/2">
-          <AssetInformationPanel
-            tokenRegistryAddress={tokenRegistryAddress}
-            setShowEndorsementChain={setShowEndorsementChain}
-          />
-        </div>
-      {/* {!isTokenBurnt && (
-        <div className="flex flex-wrap pb-4">
-          <div className="w-auto lg:ml-auto">
-            {account ? (
-              <>
-                {canManage ? (
-                  <AssetManagementDropdown
-                    onSetFormAction={onSetFormAction}
-                    canSurrender={canSurrender}
-                    canChangeHolder={canChangeHolder}
-                    canEndorseBeneficiary={canEndorseBeneficiary}
-                    canNominateBeneficiary={canNominateBeneficiary}
-                    canEndorseTransfer={canEndorseTransfer}
-                    canHandleRestore={canHandleRestore}
-                    canHandleShred={canHandleShred}
-                  />
-                ) : (
-                  <Button
-                    className="bg-[#4fd1c5] text-white rounded-xl text-lg py-2 px-3 hover:bg-cerulean-800"
-                    onClick={handleNoAccess}
-                  >
-                    No Access
-                  </Button>
-                )}
-              </>
-            ) : (
-              <Button
-                className="bg-[#4fd1c5] text-white rounded-xl text-lg py-2 px-3 hover:bg-cerulean-800"
-                data-testid={"connectToWallet"}
-                onClick={handleConnectWallet}
-              >
-                Connect Wallet
-              </Button>
-            )}
-          </div>
-        </div>
-      )} */}
       </div>
     </>
   );

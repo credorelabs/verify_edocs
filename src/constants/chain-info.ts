@@ -1,10 +1,23 @@
-import { INFURA_API_KEY, STABILITY_API_KEY } from "../config";
+import { INFURA_API_KEY, STABILITY_API_KEY, STABILITY_TESTNET_API_KEY, ASTRON_TESTNET_API_KEY } from "../config";
+
+export type Network =
+  | "homestead"
+  | "local"
+  | "sepolia"
+  | "matic"
+  | "amoy"
+  | "xdc"
+  | "xdcapothem"
+  | "stabilitytestnet"
+  | "stability"
+  | "astron"
+  | "astrontestnet";
 
 export interface ChainInfoObject {
   label: string;
   iconImage: string;
   chainId: ChainId;
-  networkName: string; // network name that aligns with existing NETWORK_NAME
+  networkName: Network; // network name that aligns with existing NETWORK_NAME
   networkLabel: string;
   explorerUrl: string;
   rpcUrl?: string;
@@ -18,7 +31,8 @@ export interface ChainInfoObject {
 export const InitialAddress = "0x0000000000000000000000000000000000000000";
 export const BurnAddress = "0x000000000000000000000000000000000000dEaD";
 
-export const AvailableBlockChains = ["ETH", "MATIC", "XDC", "HBAR", "FREE"];
+export type AvailableBlockChains = "ETH" | "MATIC" | "POL" | "XDC" | "FREE" | "ASTRON";
+export const AvailableBlockChains: AvailableBlockChains[] = ["ETH", "MATIC", "POL", "XDC", "FREE", "ASTRON"];
 
 type ChainInfo = Record<ChainId, ChainInfoObject>;
 
@@ -42,26 +56,26 @@ export enum ChainId {
   Stability = 101010,
   StabilityTestnet = 20180427,
 
-  // Hedera Network
-  HederaMainnet = 295,
-  HederaTestnet = 296,
+  // Astron
+  Astron = 1338,
+  AstronTestnet = 21002,
 }
 
+export const CHAIN: Record<ChainId, AvailableBlockChains> = {
+  [ChainId.Local]: "ETH",
+  [ChainId.Ethereum]: "ETH",
+  [ChainId.Sepolia]: "ETH",
+  [ChainId.Polygon]: "POL",
+  [ChainId.Amoy]: "POL",
+  [ChainId.XDC]: "XDC",
+  [ChainId.APOTHEM]: "XDC",
+  [ChainId.Stability]: "FREE",
+  [ChainId.StabilityTestnet]: "FREE",
+  [ChainId.Astron]: "ASTRON",
+  [ChainId.AstronTestnet]: "ASTRON",
+};
+
 export const ChainInfo: ChainInfo = {
-  [ChainId.APOTHEM]: {
-    label: "Apothem",
-    chainId: ChainId.APOTHEM,
-    iconImage: "/static/images/networks/xdc.png",
-    networkName: "xdcapothem",
-    networkLabel: "XDC Testnet Apothem",
-    explorerUrl: "https://apothem.xdcscan.io",
-    rpcUrl: "https://earpc.apothem.network/",
-    nativeCurrency: {
-      name: "XDCt",
-      symbol: "XDCt",
-      decimals: 18,
-    },
-  },
   [ChainId.Local]: {
     label: "Local",
     chainId: ChainId.Local,
@@ -70,6 +84,11 @@ export const ChainInfo: ChainInfo = {
     networkLabel: "Local",
     rpcUrl: "http://localhost:8545",
     explorerUrl: "https://localhost/explorer",
+    nativeCurrency: {
+      name: "ETH",
+      symbol: "LOCAL",
+      decimals: 18,
+    },
   },
   [ChainId.Ethereum]: {
     label: "Ethereum",
@@ -78,6 +97,12 @@ export const ChainInfo: ChainInfo = {
     networkName: "homestead",
     networkLabel: "Ethereum",
     explorerUrl: "https://etherscan.io",
+    rpcUrl: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
+    nativeCurrency: {
+      name: "ETH",
+      symbol: "ETH",
+      decimals: 18,
+    },
   },
   [ChainId.Sepolia]: {
     label: "Sepolia",
@@ -102,8 +127,8 @@ export const ChainInfo: ChainInfo = {
     explorerUrl: "https://polygonscan.com",
     rpcUrl: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
     nativeCurrency: {
-      name: "MATIC",
-      symbol: "MATIC",
+      name: "POL",
+      symbol: "POL",
       decimals: 18,
     },
   },
@@ -113,11 +138,11 @@ export const ChainInfo: ChainInfo = {
     iconImage: "/static/images/networks/polygon.gif",
     networkName: "amoy",
     networkLabel: "Polygon Amoy",
-    explorerUrl: "https://www.oklink.com/amoy",
-    rpcUrl: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
+    explorerUrl: "https://amoy.polygonscan.com",
+    rpcUrl: `https://polygon-amoy.drpc.org`,
     nativeCurrency: {
-      name: "MATIC",
-      symbol: "aMATIC",
+      name: "POL",
+      symbol: "POL",
       decimals: 18,
     },
   },
@@ -135,6 +160,20 @@ export const ChainInfo: ChainInfo = {
       decimals: 18,
     },
   },
+  [ChainId.APOTHEM]: {
+    label: "Apothem",
+    chainId: ChainId.APOTHEM,
+    iconImage: "/static/images/networks/xdc.png",
+    networkName: "xdcapothem",
+    networkLabel: "XDC Testnet Apothem",
+    explorerUrl: "https://apothem.xdcscan.io",
+    rpcUrl: "https://rpc.ankr.com/xdc_testnet",
+    nativeCurrency: {
+      name: "XDCt",
+      symbol: "XDCt",
+      decimals: 18,
+    },
+  },
   [ChainId.Stability]: {
     label: "Stability (Beta)",
     chainId: ChainId.Stability,
@@ -142,7 +181,7 @@ export const ChainInfo: ChainInfo = {
     networkName: "stability",
     networkLabel: "Stability",
     explorerUrl: "https://stability.blockscout.com",
-    rpcUrl: `https://gtn.stabilityprotocol.com/zgt/${STABILITY_API_KEY}`,
+    rpcUrl: `https://rpc.stabilityprotocol.com/zgt/${STABILITY_API_KEY}`,
     nativeCurrency: {
       name: "FREE",
       symbol: "FREE",
@@ -150,45 +189,60 @@ export const ChainInfo: ChainInfo = {
     },
   },
   [ChainId.StabilityTestnet]: {
-    label: "Stability Testnet",
+    label: "Stability Testnet (Beta)",
     chainId: ChainId.StabilityTestnet,
     iconImage: "/static/images/networks/stability.png",
     networkName: "stabilitytestnet",
     networkLabel: "Stability Testnet",
     explorerUrl: "https://stability-testnet.blockscout.com/",
-    rpcUrl: "https://free.testnet.stabilityprotocol.com",
+    rpcUrl: `https://rpc.testnet.stabilityprotocol.com/zgt/${STABILITY_TESTNET_API_KEY}`,
     nativeCurrency: {
       name: "FREE",
       symbol: "FREE",
       decimals: 18,
     },
   },
-  [ChainId.HederaMainnet]: {
-    label: "Hedera Mainnet",
-    chainId: ChainId.HederaMainnet,
-    iconImage: "/static/images/networks/hedera.png",
-    networkName: "hederamainnet",
-    networkLabel: "Hedera Mainnet",
-    explorerUrl: "https://hashscan.io/mainnet",
-    rpcUrl: "https://mainnet.hashio.io/api",
+  [ChainId.Astron]: {
+    label: "Astron",
+    chainId: ChainId.Astron,
+    iconImage: "/static/images/networks/astron.png",
+    networkName: "astron",
+    networkLabel: "Astron",
+    explorerUrl: "https://astronscanl2.bitfactory.cn/",
+    rpcUrl: `https://astronlayer2.bitfactory.cn/auth/${ASTRON_TESTNET_API_KEY}`,
     nativeCurrency: {
-      name: "HBAR",
-      symbol: "HBAR",
+      name: "ASTRON",
+      symbol: "ASTRON",
       decimals: 18,
     },
   },
-  [ChainId.HederaTestnet]: {
-    label: "Hedera Testnet",
-    chainId: ChainId.HederaTestnet,
-    iconImage: "/static/images/networks/hedera.png",
-    networkName: "hederatestnet",
-    networkLabel: "Hedera Testnet",
-    explorerUrl: "https://hashscan.io/testnet",
-    rpcUrl: "https://testnet.hashio.io/api",
+  [ChainId.AstronTestnet]: {
+    label: "Astron Testnet (Beta)",
+    chainId: ChainId.AstronTestnet,
+    iconImage: "/static/images/networks/astron.png",
+    networkName: "astrontestnet",
+    networkLabel: "Astron Testnet",
+    explorerUrl: "https://dev-astronscanl2.bitfactory.cn/",
+    rpcUrl: `https://dev-astronlayer2.bitfactory.cn/auth/${ASTRON_TESTNET_API_KEY}`,
     nativeCurrency: {
-      name: "HBAR",
-      symbol: "HBAR",
+      name: "ASTRON",
+      symbol: "ASTRON",
       decimals: 18,
     },
   },
 };
+export const supportedMainnet = [
+  ChainInfo[ChainId.Ethereum].networkName,
+  ChainInfo[ChainId.Polygon].networkName,
+  ChainInfo[ChainId.XDC].networkName,
+  ChainInfo[ChainId.Stability].networkName,
+  ChainInfo[ChainId.Astron].networkName,
+];
+
+export const supportedTestnet = [
+  ChainInfo[ChainId.Sepolia].networkName,
+  ChainInfo[ChainId.Amoy].networkName,
+  ChainInfo[ChainId.APOTHEM].networkName,
+  ChainInfo[ChainId.StabilityTestnet].networkName,
+  ChainInfo[ChainId.AstronTestnet].networkName,
+];

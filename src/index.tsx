@@ -1,19 +1,21 @@
-import { OverlayContextProvider } from "@tradetrust-tt/tradetrust-ui-components";
-import { gaPageView } from "@tradetrust-tt/tradetrust-utils";
 import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
+import { Router } from "react-router-dom";
 import AppContainer from "./AppContainer";
+import { ConfigContextProvider } from "./common/contexts/ConfigContext";
+import { FormsContextProvider } from "./common/contexts/FormsContext";
+import { MagicProvider } from "./common/contexts/MagicContext";
+import { OverlayContextProvider } from "./common/contexts/OverlayContext";
 import { ProviderContextProvider } from "./common/contexts/provider";
 import { TokenInformationContextProvider } from "./common/contexts/TokenInformationContext";
-import { AuthProvider } from "./common/contexts/AuthenticationContext";
+import { gaPageView } from "./common/utils/analytics";
+import { getChainInfoFromNetworkName, getSupportedChainInfo } from "./common/utils/chain-utils";
+import { GA_MEASUREMENT_ID, NETWORK_NAME } from "./config";
+import { history } from "./history";
 import "./index.css";
 import { configureStore } from "./store";
-import {  Router } from "react-router-dom";
-import { history } from "./history";
-import { NETWORK_NAME } from "./config";
-import { getChainInfoFromNetworkName, getSupportedChainInfo } from "./common/utils/chain-utils";
-import { GA_MEASUREMENT_ID } from "./config";
+import * as Sentry from "@sentry/react";
 
 const store = configureStore();
 
@@ -21,26 +23,49 @@ history.listen(() => {
   gaPageView({ action: "page_view" }, GA_MEASUREMENT_ID);
 });
 
-const basename = "/verify_edocs";
+Sentry.init({
+  dsn: process.env.SENTRY_DATA_SOURCE_NAME,
+  environment: process.env.NODE_ENV,
+  sendDefaultPii: true,
+  integrations: (integrations) => {
+    return [
+      ...integrations,
+      Sentry.captureConsoleIntegration({ levels: ["error"] }),
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: false,
+        maskAllInputs: false,
+        blockAllMedia: false,
+      }),
+    ];
+  },
+  tracesSampleRate: 1.0,
+  // Session Replay
+  replaysSessionSampleRate: 0.1, // 10% of normal sessions.
+  replaysOnErrorSampleRate: 1.0, // 100% of sessions where an error occurs.
+});
 
 const App = () => {
+  const defaultChainId = getChainInfoFromNetworkName(NETWORK_NAME).chainId;
+
   return (
-    <OverlayContextProvider>
-      <ProviderContextProvider
-        defaultChainId={getChainInfoFromNetworkName(NETWORK_NAME).chainId}
-        networks={getSupportedChainInfo()}
-      >
-        <TokenInformationContextProvider>
-          <AuthProvider>
-            <Provider store={store}>
-                <Router history={history} >
-                  <AppContainer />
-                </Router>
-            </Provider>
-          </AuthProvider>
-        </TokenInformationContextProvider>
-      </ProviderContextProvider>
-    </OverlayContextProvider>
+    <ConfigContextProvider>
+      <FormsContextProvider>
+        <OverlayContextProvider>
+          <MagicProvider defaultChainId={defaultChainId}>
+            <ProviderContextProvider defaultChainId={defaultChainId} networks={getSupportedChainInfo()}>
+              <Provider store={store}>
+                <TokenInformationContextProvider>
+                  <Router history={history}>
+                    <AppContainer />
+                  </Router>
+                </TokenInformationContextProvider>
+              </Provider>
+            </ProviderContextProvider>
+          </MagicProvider>
+        </OverlayContextProvider>
+      </FormsContextProvider>
+    </ConfigContextProvider>
   );
 };
 ReactDOM.render(<App />, document.getElementById("root"));

@@ -7,8 +7,8 @@ export const MAIN_NETWORKS = [
   ChainId.Ethereum, //
   ChainId.Polygon,
   ChainId.XDC,
-  ChainId.HederaMainnet,
   ChainId.Stability,
+  ChainId.Astron,
 ];
 
 /**
@@ -19,5 +19,5 @@ export const TEST_NETWORKS = [
   ChainId.Amoy,
   ChainId.APOTHEM,
   ChainId.StabilityTestnet,
-  ChainId.HederaTestnet,
+  ChainId.AstronTestnet,
 ];

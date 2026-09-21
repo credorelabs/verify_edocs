@@ -1,76 +1,65 @@
 import { useState, useEffect, useCallback } from "react";
 import { providers, Signer } from "ethers";
-import { TitleEscrowFactory__factory, TitleEscrow__factory } from "@tradetrust-tt/token-registry/contracts";
-import { TitleEscrow } from "@tradetrust-tt/token-registry/contracts";
-import { TradeTrustToken } from "@tradetrust-tt/token-registry/contracts";
-import { BurnAddress } from "../../constants/chain-info";
-
+import { getTitleEscrowAddress, v5Contracts, v4Contracts } from "@trustvc/trustvc";
+import { TitleEscrow, TradeTrustToken } from "../../types";
+import { TokenRegistryVersions } from "../../constants";
+import { useTokenRegistryVersion } from "./useTokenRegistryVersion";
+const { TitleEscrow__factory, ObligationEscrow__factory } = v5Contracts;
+const { TitleEscrow__factory: TitleEscrow__factoryV4 } = v4Contracts;
 interface useTitleEscrowContractProps {
   titleEscrow?: TitleEscrow;
+  titleEscrowAddress?: string;
   documentOwner?: string;
   updateTitleEscrow: () => Promise<void>;
 }
 
 export const useTitleEscrowContract = (
-  provider: providers.Provider | Signer | undefined,
+  providerOrSigner: providers.Provider | Signer | undefined,
   tokenRegistry?: TradeTrustToken,
-  tokenId?: string
+  tokenId?: string,
+  isObligation?: boolean
 ): useTitleEscrowContractProps => {
   const [titleEscrow, setTitleEscrow] = useState<TitleEscrow>();
+  const [titleEscrowAddress, setTitleEscrowAddress] = useState<string>();
   const [documentOwner, setDocumentOwner] = useState<string>();
+  const tokenRegistryVersion = useTokenRegistryVersion();
 
   const updateTitleEscrow = useCallback(async () => {
-    if (!tokenRegistry || !tokenId || !provider) return;
-    const titleEscrowOwner = await tokenRegistry.ownerOf(tokenId);
-    setDocumentOwner(titleEscrowOwner);
-    const instance = await connectToTitleEscrow({
-      provider,
-      tokenRegistry,
-      tokenId,
-    });
-    setTitleEscrow(instance);
-  }, [provider, tokenId, tokenRegistry]);
+    if (!tokenRegistry || !tokenId || !providerOrSigner || !tokenRegistryVersion) return;
+
+    try {
+      const provider = (
+        "provider" in providerOrSigner ? providerOrSigner.provider : providerOrSigner
+      ) as providers.Provider;
+      const titleEscrowOwner = await tokenRegistry.ownerOf(tokenId);
+      setDocumentOwner(titleEscrowOwner);
+      const address = await getTitleEscrowAddress(tokenRegistry.address, tokenId, provider, {
+        titleEscrowVersion: isObligation ? "v5" : (tokenRegistryVersion.toLowerCase() as "v4" | "v5"),
+      });
+      let instance;
+      if (isObligation) {
+        instance = ObligationEscrow__factory.connect(address, providerOrSigner as any);
+      } else if (tokenRegistryVersion === TokenRegistryVersions.V4) {
+        instance = TitleEscrow__factoryV4.connect(address, providerOrSigner);
+      } else {
+        instance = TitleEscrow__factory.connect(address, providerOrSigner);
+      }
+      setTitleEscrow(instance as TitleEscrow);
+      setTitleEscrowAddress(address);
+    } catch (error) {
+      setTitleEscrow(undefined);
+      setTitleEscrowAddress(undefined);
+    }
+  }, [providerOrSigner, tokenId, tokenRegistry, tokenRegistryVersion, isObligation]);
 
   useEffect(() => {
     updateTitleEscrow();
     return () => {
       setTitleEscrow(undefined);
       setDocumentOwner(undefined);
+      setTitleEscrowAddress(undefined);
     };
-  }, [updateTitleEscrow, tokenId, provider]);
+  }, [updateTitleEscrow, tokenId, providerOrSigner]);
 
-  return { titleEscrow, updateTitleEscrow, documentOwner };
-};
-
-export const retrieveTitleEscrowAddressOnFactory = async (
-  tokenRegistry: TradeTrustToken,
-  tokenId: string,
-  signer: providers.Provider | Signer
-): Promise<string> => {
-  const titleEscrowFactoryAddress = await tokenRegistry.titleEscrowFactory();
-  const tokenRegistryAddress = await tokenRegistry.address;
-  const titleEscrowFactory = TitleEscrowFactory__factory.connect(titleEscrowFactoryAddress, signer);
-  const titleEscrowAddress = await titleEscrowFactory.getAddress(tokenRegistryAddress, tokenId);
-  return titleEscrowAddress;
-};
-
-interface ConnectToTitleEscrowArgs {
-  provider: providers.Provider | Signer;
-  tokenRegistry: TradeTrustToken;
-  tokenId: string;
-}
-
-export const connectToTitleEscrow = async ({
-  provider,
-  tokenRegistry,
-  tokenId,
-}: ConnectToTitleEscrowArgs): Promise<TitleEscrow> => {
-  const tokenRegistryAddress = tokenRegistry.address;
-  const titleEscrowOwner = await tokenRegistry.ownerOf(tokenId);
-  const inactiveEscrow = [BurnAddress, tokenRegistryAddress].includes(titleEscrowOwner);
-  let titleEscrowAddress = titleEscrowOwner;
-  if (inactiveEscrow) {
-    titleEscrowAddress = await retrieveTitleEscrowAddressOnFactory(tokenRegistry, tokenId, provider);
-  }
-  return TitleEscrow__factory.connect(titleEscrowAddress, provider);
+  return { titleEscrow, titleEscrowAddress, updateTitleEscrow, documentOwner };
 };

@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { useContractFunctionHook } from "@govtechsg/ethers-contract-hook";
-import { TradeTrustToken } from "@tradetrust-tt/token-registry/dist/contracts";
 import { BytesLike } from "ethers";
-
+import { useEffect, useState } from "react";
+import { useContractFunctionHook } from "./useContractFunctionHook";
+import { TradeTrustToken } from "../../types";
 export const useTokenRegistryRole = ({
   account,
   role,
@@ -25,7 +24,7 @@ export const useTokenRegistryRole = ({
   }, [role, account, checkRole, tokenRegistry, resetCheckRole]);
 
   useEffect(() => {
-    setHasRoleState(hasRole?.[0]);
+    setHasRoleState(Array.isArray(hasRole) ? hasRole[0] : hasRole);
   }, [hasRole]);
 
   return { hasRole: hasRoleState };
