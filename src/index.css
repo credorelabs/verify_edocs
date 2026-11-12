@@ -1355,11 +1355,6 @@ footer .text-cloud-500,
   color: #526b7e;
 }
 
-.credore-footer-wordmark {
-  color: #102a43;
-  letter-spacing: -0.07em;
-}
-
 @media (min-width: 768px) {
   .app-navigation {
     flex: 0 0 16rem;
@@ -1688,10 +1683,6 @@ footer hr {
 
 .mb-1 {
   margin-bottom: 0.25rem;
-}
-
-.mb-12 {
-  margin-bottom: 3rem;
 }
 
 .mb-2 {
@@ -2110,10 +2101,6 @@ footer hr {
 
 .max-w-6xl {
   max-width: 72rem;
-}
-
-.max-w-\[142px\] {
-  max-width: 142px;
 }
 
 .max-w-\[640px\] {
@@ -4092,17 +4079,8 @@ footer hr {
     padding-right: 2rem;
   }
 
-  .lg\:text-left {
-    text-align: left;
-  }
-
   .lg\:text-right {
     text-align: right;
-  }
-
-  .lg\:text-3xl {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
   }
 }
 
